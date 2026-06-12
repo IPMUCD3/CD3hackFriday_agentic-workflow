@@ -173,10 +173,10 @@
 <section class="slide"><div class="eyebrow">Where to go next</div>
 <h1 class="sm">Resources.</h1>
 <div class="list">
-<div class="row"><b>claude code</b><span>code.claude.com/docs/en — /skills · /hooks · /mcp · /sub-agents · /plugins</span></div>
-<div class="row"><b>codex</b><span>developers.openai.com/codex — /skills · /mcp · /agents</span></div>
-<div class="row"><b>workflows</b><span>code.claude.com/docs/en/common-workflows · /best-practices</span></div>
-<div class="row"><b>cross-tool</b><span>AGENTS.md and the Agent Skills standard work across Codex, Claude Code, Cursor, ...</span></div>
+	<div class="row"><b>claude code</b><span><a href="https://code.claude.com/docs/en">code.claude.com/docs/en</a> — /skills · /hooks · /mcp · /sub-agents · /plugins</span></div>
+	<div class="row"><b>codex</b><span><a href=""https://developers.openai.com/codex>developers.openai.com/codex</a> — /skills · /mcp · /agents</span></div>
+	<div class="row"><b>workflows</b><span><a href="https://code.claude.com/docs/en/common-workflows">code.claude.com/docs/en/common-workflows</a> · <a href="https://code.claude.com/docs/en/best-practices">/best-practices</a></span></div>
+<div class="row"><b>build your own skills</b><span><a href="https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf">Anthropic Guide to Building Skill for Claude</a></span></div>
 </div></section>
 
 
@@ -190,7 +190,7 @@
 const S=[...document.querySelectorAll('.slide')],bar=document.getElementById('bar'),
 counter=document.getElementById('counter');let i=0;
 function show(){S.forEach((s,j)=>s.classList.toggle('on',j===i));
-bar.style.width=((i+1)/S.length*100)+'%';
+
 counter.textContent=String(i+1).padStart(2,'0')+' / '+S.length+'  ·  ← →';}
 function go(d){i=Math.max(0,Math.min(S.length-1,i+d));show();}
 addEventListener('keydown',e=>{if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();go(1);}
