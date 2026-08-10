@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Agentic Research Workflows with Codex — ICISE 2026</title>
+<style>
+  :root {
+    --bg: #0D0D0D;
+    --surface: #171717;
+    --surface-2: #202020;
+    --ink: #F4F4F0;
+    --muted: #A6A6A0;
+    --dim: #686865;
+    --line: rgba(244, 244, 240, 0.15);
+    --line-strong: rgba(244, 244, 240, 0.28);
+    --green: #10A37F;
+    --green-soft: #78D7BE;
+    --green-wash: rgba(16, 163, 127, 0.14);
+    --amber: #E8B45B;
+    --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    --pad-x: clamp(54px, 7.2vw, 112px);
+    --pad-y: clamp(48px, 7.4vh, 78px);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    overflow: hidden;
+    cursor: default;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 84% 12%, rgba(16, 163, 127, 0.09), transparent 27%),
+      linear-gradient(rgba(255,255,255,0.023) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.023) 1px, transparent 1px);
+    background-size: auto, 54px 54px, 54px 54px;
+    mask-image: linear-gradient(to bottom, black, transparent 88%);
+  }
+
+  a { color: var(--green-soft); text-underline-offset: 5px; }
+  code { font-family: var(--mono); }
+
+  #progress-track {
+    position: fixed;
+    z-index: 20;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    background: rgba(255,255,255,0.04);
+  }
+
+  #progress {
+    height: 100%;
+    width: 0;
+    background: var(--green);
+    transition: width 220ms ease;
+  }
+
+  #chrome {
+    position: fixed;
+    z-index: 20;
+    left: 34px;
+    right: 34px;
+    bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+  }
+
+  #section-name { text-transform: uppercase; }
+  #counter { font-variant-numeric: tabular-nums; }
+
+  .slide {
+    position: fixed;
+    inset: 0;
+    display: none;
+    overflow: hidden;
+    padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 18px);
+  }
+
+  .slide.on {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    animation: enter 380ms cubic-bezier(.2,.7,.2,1) both;
+  }
+
+  .slide::after {
+    content: attr(data-number);
+    position: absolute;
+    right: clamp(24px, 3vw, 44px);
+    top: clamp(22px, 3.5vh, 34px);
+    font: 700 11px/1 var(--mono);
+    color: var(--dim);
+    letter-spacing: 0.14em;
+  }
+
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .kicker {
+    margin: 0 0 clamp(18px, 3vh, 28px);
+    color: var(--green-soft);
+    font: 700 clamp(12px, 1.05vw, 15px)/1.2 var(--mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .kicker.neutral { color: var(--muted); }
+
+  h1, h2, h3, p { margin: 0; }
+  h1 {
+    max-width: 1050px;
+    font-size: clamp(64px, 7.7vw, 110px);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+    font-weight: 600;
+  }
+
+  h2 {
+    max-width: 1060px;
+    font-size: clamp(43px, 4.9vw, 70px);
+    line-height: 1.03;
+    letter-spacing: -0.042em;
+    font-weight: 560;
+  }
+
+  h3 {
+    font-size: clamp(22px, 2vw, 29px);
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+  }
+
+  .hero-word { color: var(--green-soft); }
+  .muted { color: var(--muted); }
+  .dim { color: var(--dim); }
+  .mono { font-family: var(--mono); }
+  .nowrap { white-space: nowrap; }
+
+  .lede {
+    max-width: 830px;
+    margin-top: clamp(22px, 3.4vh, 34px);
+    color: var(--muted);
+    font-size: clamp(20px, 1.72vw, 27px);
+    line-height: 1.46;
+    letter-spacing: -0.015em;
+  }
+
+  .small-note {
+    color: var(--muted);
+    font-size: clamp(16px, 1.28vw, 20px);
+    line-height: 1.48;
+  }
+
+  .eyeline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 38px;
+    color: var(--muted);
+    font: 600 13px/1.3 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .eyeline::before {
+    content: ">";
+    color: var(--green);
+    font-size: 18px;
+  }
+
+  .title-mark {
+    position: absolute;
+    right: 7vw;
+    bottom: 10vh;
+    color: var(--green);
+    font: 500 clamp(120px, 20vw, 280px)/0.72 var(--mono);
+    opacity: 0.18;
+    letter-spacing: -0.16em;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 22px;
+    margin-bottom: clamp(26px, 4vh, 38px);
+    color: var(--muted);
+    font: 650 13px/1.2 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .meta-row span + span::before {
+    content: "·";
+    margin-right: 22px;
+    color: var(--green);
+  }
+
+  .promise {
+    margin-top: clamp(42px, 7vh, 66px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr);
+    align-items: center;
+    max-width: 1120px;
+  }
+
+  .promise-block {
+    border-top: 1px solid var(--line-strong);
+    padding-top: 20px;
+  }
+
+  .promise-block .label {
+    color: var(--dim);
+    font: 700 12px/1.2 var(--mono);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .promise-block strong {
+    display: block;
+    margin-top: 10px;
+    font-size: clamp(25px, 2.4vw, 36px);
+    line-height: 1.22;
+    letter-spacing: -0.03em;
+  }
+
+  .promise-arrow {
+    text-align: center;
+    color: var(--green);
+    font-size: 38px;
+  }
+
+  .quote {
+    max-width: 1180px;
+    font-size: clamp(70px, 8.2vw, 118px);
+    line-height: 0.98;
+    letter-spacing: -0.06em;
+    font-weight: 590;
+  }
+
+  .quote .acts {
+    color: var(--green-soft);
+    font-style: normal;
+  }
+
+  .loop {
+    margin-top: clamp(42px, 7vh, 68px);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 20px;
+    align-items: start;
+    max-width: 1160px;
+  }
+
+  .loop-stage {
+    padding-top: 18px;
+    border-top: 2px solid var(--line-strong);
+  }
+
+  .loop-stage.active { border-color: var(--green); }
+
+  .loop-stage b {
+    display: block;
+    color: var(--green-soft);
+    font: 700 13px/1.2 var(--mono);
+    letter-spacing: 0.12em;
+  }
+
+  .loop-stage span {
+    display: block;
+    margin-top: 12px;
+    font-size: clamp(23px, 2.25vw, 34px);
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+  }
+
+  .loop-arrow {
+    padding-top: 22px;
+    color: var(--dim);
+    font-size: 28px;
+  }
+
+  .repeat {
+    margin-top: 30px;
+    color: var(--muted);
+    font: 650 14px/1.4 var(--mono);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .repeat span { color: var(--green-soft); }
+
+  .reach {
+    margin-top: clamp(42px, 6.4vh, 62px);
+    display: grid;
+    grid-template-columns: 0.72fr 1.35fr;
+    column-gap: 72px;
+    align-items: start;
+    max-width: 1120px;
+  }
+
+  .reach-core {
+    padding: 25px 0 28px;
+    border-block: 1px solid var(--line-strong);
+  }
+
+  .reach-core b {
+    color: var(--green);
+    font: 700 13px/1.2 var(--mono);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .reach-core span {
+    display: block;
+    margin-top: 15px;
+    font-size: clamp(29px, 3vw, 43px);
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+  }
+
+  .reach-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 38px;
+  }
+
+  .reach-item {
+    padding: 16px 0 17px;
+    border-top: 1px solid var(--line);
+    font-size: clamp(20px, 1.85vw, 28px);
+    line-height: 1.28;
+    letter-spacing: -0.025em;
+  }
+
+  .reach-item small {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 0.62em;
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
+
+  .three-col {
+    margin-top: clamp(42px, 6.5vh, 62px);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 44px;
+    max-width: 1160px;
+  }
+
+  .principle {
+    padding-top: 18px;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .principle .n {
+    color: var(--green);
+    font: 700 13px/1 var(--mono);
+    letter-spacing: 0.12em;
+  }
+
+  .principle h3 { margin-top: 15px; }
+  .principle p {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: clamp(17px, 1.45vw, 22px);
+    line-height: 1.45;
+  }
+
+  .stack {
+    margin-top: clamp(38px, 6vh, 58px);
+    max-width: 1020px;
+  }
+
+  .stack-row {
+    display: grid;
+    grid-template-columns: minmax(350px, 1.05fr) minmax(260px, 1fr) 150px;
+    gap: 24px;
+    align-items: center;
+    padding: 17px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .stack-row:last-child { border-bottom: 1px solid var(--line); }
+
+  .stack-row code {
+    color: var(--green-soft);
+    font-size: clamp(16px, 1.35vw, 20px);
+  }
+
+  .stack-row strong {
+    font-size: clamp(19px, 1.65vw, 25px);
+    font-weight: 560;
+  }
+
+  .stack-row span {
+    color: var(--muted);
+    font-size: clamp(15px, 1.2vw, 18px);
+    text-align: right;
+  }
+
+  .stack-note {
+    margin-top: 18px;
+    color: var(--muted);
+    font: 600 13px/1.4 var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .skill-line {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 64px;
+    margin-top: clamp(42px, 6.6vh, 62px);
+    max-width: 1120px;
+  }
+
+  .skill-file {
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+  }
+
+  .skill-file .file {
+    color: var(--green-soft);
+    font: 700 18px/1.2 var(--mono);
+  }
+
+  .skill-file p {
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  .method {
+    display: grid;
+    gap: 18px;
+  }
+
+  .method-row {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 18px;
+    align-items: baseline;
+  }
+
+  .method-row b {
+    color: var(--green);
+    font: 700 13px/1 var(--mono);
+  }
+
+  .method-row span {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+    font-size: clamp(20px, 1.8vw, 27px);
+    line-height: 1.3;
+  }
+
+  .demo-slide {
+    background:
+      radial-gradient(circle at 78% 32%, rgba(16, 163, 127, 0.17), transparent 28%),
+      var(--bg);
+  }
+
+  .demo-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
+    margin-bottom: 28px;
+    color: var(--green-soft);
+    font: 700 13px/1 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  .demo-tag::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 6px var(--green-wash);
+  }
+
+  .demo-context {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    margin-top: clamp(34px, 5.2vh, 52px);
+    max-width: 1040px;
+  }
+
+  .demo-context div {
+    flex: 1;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .demo-context b {
+    color: var(--dim);
+    font: 700 12px/1.2 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .demo-context span {
+    display: block;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: clamp(18px, 1.55vw, 23px);
+    line-height: 1.35;
+  }
+
+  .prompt-shell {
+    margin-top: clamp(32px, 4.7vh, 46px);
+    max-width: 1120px;
+    background: #111;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,.34);
+  }
+
+  .prompt-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    color: var(--dim);
+    font: 600 12px/1 var(--mono);
+  }
+
+  .prompt-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3C3C3C;
+  }
+
+  .prompt-path { margin-left: 8px; }
+
+  .prompt-body {
+    padding: clamp(22px, 3vw, 34px);
+    color: #E9E9E4;
+    font: 500 clamp(16px, 1.35vw, 20px)/1.62 var(--mono);
+  }
+
+  .prompt-body::before {
+    content: ">";
+    color: var(--green);
+    margin-right: 12px;
+    font-weight: 800;
+  }
+
+  .handoff {
+    margin-top: 22px;
+    color: var(--green-soft);
+    font: 750 13px/1.2 var(--mono);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .debrief {
+    margin-top: clamp(34px, 5vh, 50px);
+    display: grid;
+    grid-template-columns: 1.18fr 0.82fr;
+    gap: 70px;
+    max-width: 1150px;
+  }
+
+  .science-loop {
+    font-family: var(--mono);
+    font-size: clamp(17px, 1.5vw, 22px);
+    line-height: 1.55;
+  }
+
+  .science-loop .line {
+    padding: 15px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .science-loop .line:last-child { border-bottom: 1px solid var(--line); }
+  .science-loop b { color: var(--green-soft); }
+  .science-loop .arrow { color: var(--green); padding-inline: 8px; }
+
+  .evidence-list {
+    display: grid;
+    gap: 16px;
+  }
+
+  .evidence-list p {
+    color: var(--muted);
+    font-size: clamp(17px, 1.45vw, 21px);
+    line-height: 1.42;
+  }
+
+  .evidence-list strong {
+    display: block;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.8em;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .bridge {
+    max-width: 1180px;
+    font-size: clamp(58px, 6.65vw, 96px);
+    line-height: 1.03;
+    letter-spacing: -0.055em;
+    font-weight: 580;
+  }
+
+  .bridge .step { color: var(--muted); }
+  .bridge .step:last-child { color: var(--green-soft); }
+
+  .equation {
+    margin-top: clamp(34px, 5.2vh, 50px);
+    max-width: 1160px;
+    padding: 26px 0 28px;
+    border-block: 1px solid var(--line-strong);
+    color: var(--ink);
+    font: 500 clamp(20px, 2.05vw, 30px)/1.42 var(--mono);
+    letter-spacing: -0.02em;
+  }
+
+  .equation .integral { color: var(--green-soft); }
+  .equation-note {
+    margin-top: 20px;
+    color: var(--muted);
+    font-size: clamp(17px, 1.45vw, 21px);
+  }
+
+  .checks {
+    margin-top: clamp(34px, 5.2vh, 52px);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0 34px;
+    max-width: 1080px;
+  }
+
+  .check {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+    font: 600 clamp(18px, 1.65vw, 24px)/1.3 var(--mono);
+  }
+
+  .check:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
+  .check span:last-child { color: var(--green-soft); font-size: 0.8em; }
+
+  .artifact-line {
+    margin-top: 22px;
+    color: var(--muted);
+    font: 550 14px/1.5 var(--mono);
+  }
+
+  .recipe {
+    margin-top: clamp(38px, 5.7vh, 56px);
+    max-width: 1160px;
+  }
+
+  .recipe-row {
+    display: grid;
+    grid-template-columns: 62px 190px 1fr;
+    align-items: baseline;
+    gap: 20px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .recipe-row:last-child { border-bottom: 1px solid var(--line); }
+  .recipe-row b {
+    color: var(--green);
+    font: 700 13px/1 var(--mono);
+  }
+
+  .recipe-row strong {
+    font-size: clamp(19px, 1.65vw, 25px);
+    font-weight: 600;
+  }
+
+  .recipe-row span {
+    color: var(--muted);
+    font-size: clamp(17px, 1.4vw, 21px);
+  }
+
+  .resource-list {
+    margin-top: clamp(34px, 5vh, 48px);
+    max-width: 1020px;
+  }
+
+  .resource {
+    display: grid;
+    grid-template-columns: 190px 1fr;
+    gap: 24px;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .resource:last-child { border-bottom: 1px solid var(--line); }
+
+  .resource b {
+    color: var(--muted);
+    font: 700 12px/1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+  }
+
+  .resource a {
+    font-size: clamp(17px, 1.45vw, 21px);
+    line-height: 1.35;
+  }
+
+  .speaker-notes { display: none; }
+
+  @media (max-width: 920px) {
+    :root { --pad-x: 44px; --pad-y: 48px; }
+    .promise { grid-template-columns: 1fr 46px 1fr; }
+    .reach, .skill-line, .debrief { column-gap: 34px; }
+    .three-col { gap: 24px; }
+    .stack-row { grid-template-columns: minmax(330px, 1.05fr) minmax(230px, 1fr) 130px; }
+  }
+
+  @media (max-aspect-ratio: 4/3) {
+    h1 { font-size: clamp(56px, 10vw, 84px); }
+    h2 { font-size: clamp(38px, 6.6vw, 58px); }
+    .slide { justify-content: flex-start !important; padding-top: 10vh; }
+    .loop, .three-col { gap: 20px; }
+    .demo-context { flex-wrap: wrap; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide.on { animation: none; }
+    #progress { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div id="progress-track" aria-hidden="true"><div id="progress"></div></div>
+<div id="chrome" aria-hidden="true">
+  <span id="section-name">Orientation</span>
+  <span id="counter">01 / 17 · ← →</span>
+</div>
+
+<section class="slide on" id="slide-1" data-number="01" data-section="Orientation" aria-label="Title slide">
+  <div class="meta-row"><span>ICISE</span><span>10 August 2026</span></div>
+  <h1>Agentic research<br>workflows <span class="hero-word">with Codex</span></h1>
+  <p class="lede">A practical orientation for moving from unfamiliar research code to a verified scientific result.</p>
+  <div class="title-mark" aria-hidden="true">›_</div>
+</section>
+
+<section class="slide" id="slide-2" data-number="02" data-section="Orientation" aria-label="Orientation promise">
+  <p class="kicker">The promise</p>
+  <h2>Leave with a workflow,<br>not a feature list.</h2>
+  <div class="promise">
+    <div class="promise-block">
+      <span class="label">Starting point</span>
+      <strong>An unfamiliar repository</strong>
+    </div>
+    <div class="promise-arrow" aria-hidden="true">→</div>
+    <div class="promise-block">
+      <span class="label">Finish line</span>
+      <strong>A result you can verify</strong>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="slide-3" data-number="03" data-section="Mental model" aria-label="One sentence mental model">
+  <p class="kicker">The one-sentence model</p>
+  <p class="quote">Chat answers.<br>An agent <em class="acts">acts.</em></p>
+  <p class="lede">It can inspect files, run tools, observe the result, and try again. You can interrupt and redirect it at any point.</p>
+</section>
+
+<section class="slide" id="slide-4" data-number="04" data-section="Mental model" aria-label="Agent loop">
+  <p class="kicker">The agent loop</p>
+  <h2>The loop is simple.<br>The work can be deep.</h2>
+  <div class="loop" aria-label="Gather context, take action, verify results">
+    <div class="loop-stage">
+      <b>01</b>
+      <span>Gather<br>context</span>
+    </div>
+    <div class="loop-arrow" aria-hidden="true">→</div>
+    <div class="loop-stage">
+      <b>02</b>
+      <span>Take<br>action</span>
+    </div>
+    <div class="loop-arrow" aria-hidden="true">→</div>
+    <div class="loop-stage active">
+      <b>03</b>
+      <span>Verify<br>results</span>
+    </div>
+  </div>
+  <p class="repeat">Repeat · course-correct · <span>the researcher stays in the loop</span></p>
+</section>
+
+<section class="slide" id="slide-5" data-number="05" data-section="Mental model" aria-label="Codex working context">
+  <p class="kicker">Working context</p>
+  <h2>Codex can work across the<br>whole research environment.</h2>
+  <div class="reach">
+    <div class="reach-core">
+      <b>The working set</b>
+      <span>Context that can become action</span>
+    </div>
+    <div class="reach-list">
+      <div class="reach-item">Repository files<small>code · tests · configuration</small></div>
+      <div class="reach-item">Terminal commands<small>build · run · inspect</small></div>
+      <div class="reach-item">Documents<small>papers · notes · specifications</small></div>
+      <div class="reach-item">Local tools<small>notebooks · Wolfram · JAX</small></div>
+      <div class="reach-item">Connected services<small>through authorized tools</small></div>
+      <div class="reach-item">Its own output<small>evidence for the next iteration</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="slide-6" data-number="06" data-section="Safe agency" aria-label="Safe agency">
+  <p class="kicker">Safe agency</p>
+  <h2>Useful autonomy has<br>explicit boundaries.</h2>
+  <div class="three-col">
+    <div class="principle">
+      <span class="n">01 · BOUNDARY</span>
+      <h3>Sandbox</h3>
+      <p>Defines where Codex can read, write, and reach the network.</p>
+    </div>
+    <div class="principle">
+      <span class="n">02 · CHECKPOINT</span>
+      <h3>Approval</h3>
+      <p>Decides when Codex must pause before an action proceeds.</p>
+    </div>
+    <div class="principle">
+      <span class="n">03 · EVIDENCE</span>
+      <h3>Verification</h3>
+      <p>Tests, renders, or comparisons define what “done” means.</p>
+    </div>
+  </div>
+  <p class="stack-note">User defaults · ~/.codex/config.toml &nbsp;&nbsp; Project overrides · .codex/config.toml for trusted projects</p>
+  <aside class="speaker-notes"><p>[Sources]</p><p>https://learn.chatgpt.com/docs/agent-approvals-security.md; https://learn.chatgpt.com/docs/config-file/config-basic.md</p></aside>
+</section>
+
+<section class="slide" id="slide-7" data-number="07" data-section="Customization" aria-label="AGENTS.md instruction hierarchy">
+  <p class="kicker">Persistent context</p>
+  <h2>Guidance gets more specific<br>as the work gets closer.</h2>
+  <div class="stack">
+    <div class="stack-row">
+      <code>~/.codex/AGENTS.md</code>
+      <strong>Personal defaults</strong>
+      <span>every repository</span>
+    </div>
+    <div class="stack-row">
+      <code>./AGENTS.md</code>
+      <strong>Project conventions</strong>
+      <span>shared in the repo</span>
+    </div>
+    <div class="stack-row">
+      <code>subdir/AGENTS.override.md</code>
+      <strong>Local rules</strong>
+      <span>this subtree</span>
+    </div>
+  </div>
+  <p class="stack-note">Codex reads from the project root toward the working directory · closer guidance is applied later</p>
+  <aside class="speaker-notes"><p>[Sources]</p><p>https://learn.chatgpt.com/docs/agent-configuration/agents-md</p></aside>
+</section>
+
+<section class="slide" id="slide-8" data-number="08" data-section="Customization" aria-label="Skills">
+  <p class="kicker">Reusable procedures</p>
+  <h2>A skill turns a good method<br>into a repeatable one.</h2>
+  <div class="skill-line">
+    <div class="skill-file">
+      <div class="file">SKILL.md</div>
+      <p>Focused instructions, with optional references and scripts.</p>
+    </div>
+    <div class="method">
+      <div class="method-row"><b>01</b><span>Recognize the right kind of task</span></div>
+      <div class="method-row"><b>02</b><span>Load the domain workflow</span></div>
+      <div class="method-row"><b>03</b><span>Apply the same verification discipline</span></div>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>[Sources]</p><p>https://learn.chatgpt.com/docs/build-skills</p></aside>
+</section>
+
+<section class="slide demo-slide" id="slide-9" data-number="09" data-section="Live demo 01" aria-label="Codebase onboarding demo setup">
+  <div class="demo-tag">Live demo 01 · codebase onboarding</div>
+  <h2>First, let Codex learn<br>the codebase.</h2>
+  <p class="lede"><code>steady-2d-heat-inverse</code> solves a forward heat equation, then infers a spatially varying conductivity through an adjoint gradient and PETSc TAO.</p>
+  <div class="demo-context">
+    <div><b>What Codex receives</b><span>A clean copy of an unfamiliar repository</span></div>
+    <div><b>What we ask for</b><span>A working model backed by file evidence</span></div>
+    <div><b>Scale check</b><span>Repeat the map on <code>jaxPTPolyPol</code></span></div>
+  </div>
+</section>
+
+<section class="slide" id="slide-10" data-number="10" data-section="Live demo 01" aria-label="Codebase onboarding prompt">
+  <p class="kicker">Opening prompt · demo 01</p>
+  <h2>Give the agent a question<br>with an observable finish line.</h2>
+  <div class="prompt-shell">
+    <div class="prompt-bar">
+      <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
+      <span class="prompt-path">codex · steady-2d-heat-inverse</span>
+    </div>
+    <div class="prompt-body">Onboard me to this repository as a research collaborator. Independently inspect the source, configuration, and tests; do not rely on prewritten agent notes. Explain the scientific objective; trace the forward → adjoint → optimization data flow; identify the main entry points and test strategy; and flag the first risks I should know about. Cite the files you used. Then create concise AGENTS.md guidance. Do not modify scientific source code.</div>
+  </div>
+  <p class="handoff">Switch to the terminal →</p>
+</section>
+
+<section class="slide" id="slide-11" data-number="11" data-section="Live demo 01" aria-label="Codebase onboarding debrief">
+  <p class="kicker">Debrief · demo 01</p>
+  <h2>The result is not a tour.<br>It is a working model.</h2>
+  <div class="debrief">
+    <div class="science-loop" aria-label="Heat inverse problem data flow">
+      <div class="line"><b>h(x,y)</b><span class="arrow">→</span>forward solve<span class="arrow">→</span><b>T</b></div>
+      <div class="line"><b>T − Tobs</b><span class="arrow">→</span>adjoint solve<span class="arrow">→</span><b>λ</b></div>
+      <div class="line"><b>∇T · ∇λ</b><span class="arrow">→</span>TAO update<span class="arrow">→</span><b>h′</b></div>
+    </div>
+    <div class="evidence-list">
+      <p><strong>ENTRY POINTS</strong><code>forward_solver.py</code>, <code>adjoint_solver.py</code>, <code>tao_solver.py</code></p>
+      <p><strong>TEST STRATEGY</strong>Finite difference, tangent-linear, and Taylor-remainder gradient checks.</p>
+      <p><strong>EARLY RISK</strong>The project installs flat modules: use <code>from forward_solver</code>, not a presumed <code>src</code> package.</p>
+      <p><strong>SCALE CHECK</strong>The same evidence-first map applies to the larger <code>jaxPTPolyPol</code> research stack.</p>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>[Sources]</p><p>codebase-onboarding_demo/steady-2d-heat-inverse/README.md; source modules; tests/test_grad_*.py</p></aside>
+</section>
+
+<section class="slide" id="slide-12" data-number="12" data-section="Bridge" aria-label="Bridge between demonstrations">
+  <p class="kicker neutral">The escalation</p>
+  <p class="bridge"><span class="step">Understand existing work.</span><br><span class="step">Retain the context.</span><br><span class="step">Create and verify new work.</span></p>
+</section>
+
+<section class="slide demo-slide" id="slide-13" data-number="13" data-section="Live demo 02" aria-label="Paper to Mathematica demo setup">
+  <div class="demo-tag">Live demo 02 · paper to Mathematica</div>
+  <h2>Now ask for a verified<br>scientific artifact.</h2>
+  <div class="equation">
+    Cov[P<sub>ℓ₁</sub>(k), P<sub>ℓ₂</sub>(k)] ∝
+    <span class="integral">∫<sub>−1</sub><sup>1</sup> dμ</span>
+    𝓛<sub>ℓ₁</sub>(μ) 𝓛<sub>ℓ₂</sub>(μ)
+    [P<sub>g</sub>(k,μ) + 1/n<sub>g</sub>]<sup>2</sup>
+  </div>
+  <p class="equation-note">Target: six independent entries for ℓ ∈ {0, 2, 4}. To match Eq. (B2), absorb 1/n<sub>g</sub> into P<sub>0</sub>.</p>
+  <aside class="speaker-notes"><p>[Sources]</p><p>paper-to-mathematica-nb_demo/Chudaykin-Ivanov_2019.pdf, Appendix B, Eqs. (B1)–(B2)</p></aside>
+</section>
+
+<section class="slide" id="slide-14" data-number="14" data-section="Live demo 02" aria-label="Paper to Mathematica prompt">
+  <p class="kicker">Opening prompt · demo 02</p>
+  <h2>Ask it to derive, build,<br>run, and compare.</h2>
+  <div class="prompt-shell">
+    <div class="prompt-bar">
+      <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
+      <span class="prompt-path">codex · paper-to-mathematica-nb_demo</span>
+    </div>
+    <div class="prompt-body">Treat the PDF as the source of truth; do not inspect existing solution artifacts before deriving. Reproduce Chudaykin–Ivanov (2019), p.45, Eqs. (B1)–(B2), and state the conventions. First create and run a Wolfram verification script that evaluates the exact μ integrals and prints MATCH or MISMATCH for all six independent entries. Only after six matches, compose a reviewer-friendly Mathematica notebook and report the validation command.</div>
+  </div>
+  <p class="handoff">Switch to the terminal →</p>
+</section>
+
+<section class="slide" id="slide-15" data-number="15" data-section="Live demo 02" aria-label="Paper to Mathematica verification">
+  <p class="kicker">Debrief · demo 02</p>
+  <h2>The finish line is evidence,<br>not a generated file.</h2>
+  <div class="checks" aria-label="Six covariance verification results">
+    <div class="check"><span>C(0,0)</span><span>MATCH</span></div>
+    <div class="check"><span>C(0,2)</span><span>MATCH</span></div>
+    <div class="check"><span>C(0,4)</span><span>MATCH</span></div>
+    <div class="check"><span>C(2,2)</span><span>MATCH</span></div>
+    <div class="check"><span>C(2,4)</span><span>MATCH</span></div>
+    <div class="check"><span>C(4,4)</span><span>MATCH</span></div>
+  </div>
+  <p class="artifact-line">gaussian_covariance_B1_B2.nb · WolframKernel -script verify_B1_B2.wls · symbolic comparison against Eq. (B2)</p>
+  <aside class="speaker-notes"><p>[Sources]</p><p>paper-to-mathematica-nb_demo/verify_B1_B2.wls; paper-to-mathematica-nb_demo/gaussian_covariance_B1_B2.nb. Verified with /Applications/Wolfram.app/Contents/MacOS/WolframKernel -script.</p></aside>
+</section>
+
+<section class="slide" id="slide-16" data-number="16" data-section="Practice" aria-label="Prompt recipe">
+  <p class="kicker">A reusable prompt recipe</p>
+  <h2>A strong prompt names<br>the finish line.</h2>
+  <div class="recipe">
+    <div class="recipe-row"><b>01</b><strong>Objective</strong><span>What outcome matters?</span></div>
+    <div class="recipe-row"><b>02</b><strong>Context</strong><span>Which files, paper, or data should it use?</span></div>
+    <div class="recipe-row"><b>03</b><strong>Constraints</strong><span>What must remain unchanged?</span></div>
+    <div class="recipe-row"><b>04</b><strong>Deliverable</strong><span>Which artifact should exist?</span></div>
+    <div class="recipe-row"><b>05</b><strong>Verification</strong><span>What observation proves it works?</span></div>
+  </div>
+</section>
+
+<section class="slide" id="slide-17" data-number="17" data-section="Next move" aria-label="Closing and resources">
+  <p class="kicker">Your next move</p>
+  <h2>Pick one real task.<br>Put verification in the prompt.</h2>
+  <div class="resource-list">
+    <div class="resource"><b>Codex</b><a href="https://developers.openai.com/codex">developers.openai.com/codex</a></div>
+    <div class="resource"><b>Project guidance</b><a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">learn.chatgpt.com/docs/agent-configuration/agents-md</a></div>
+    <div class="resource"><b>Skills</b><a href="https://learn.chatgpt.com/docs/build-skills">learn.chatgpt.com/docs/build-skills</a></div>
+  </div>
+  <p class="eyeline">Questions · then choose your first workflow</p>
+  <aside class="speaker-notes"><p>[Sources]</p><p>Official OpenAI documentation links shown on slide.</p></aside>
+</section>
+
+<script>
+(function () {
+  "use strict";
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const progress = document.getElementById("progress");
+  const counter = document.getElementById("counter");
+  const sectionName = document.getElementById("section-name");
+  let index = 0;
+  let touchStartX = null;
+
+  function indexFromHash() {
+    const raw = window.location.hash.replace("#", "");
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) && parsed >= 1 && parsed <= slides.length ? parsed - 1 : 0;
+  }
+
+  function show(nextIndex, updateHash) {
+    index = Math.max(0, Math.min(slides.length - 1, nextIndex));
+    slides.forEach(function (slide, slideIndex) {
+      const active = slideIndex === index;
+      slide.classList.toggle("on", active);
+      slide.setAttribute("aria-hidden", active ? "false" : "true");
+    });
+    progress.style.width = (((index + 1) / slides.length) * 100) + "%";
+    counter.textContent = String(index + 1).padStart(2, "0") + " / " + slides.length + " · ← →";
+    sectionName.textContent = slides[index].dataset.section || "Orientation";
+    document.title = slides[index].getAttribute("aria-label") + " — Codex Orientation";
+    if (updateHash !== false && window.location.hash !== "#" + (index + 1)) {
+      history.replaceState(null, "", "#" + (index + 1));
+    }
+  }
+
+  function next() { show(index + 1, true); }
+  function previous() { show(index - 1, true); }
+
+  window.addEventListener("keydown", function (event) {
+    if (event.target.closest && event.target.closest("a, button, input, textarea, select")) return;
+    if (["ArrowRight", " ", "PageDown", "Enter"].includes(event.key)) {
+      event.preventDefault();
+      next();
+    } else if (["ArrowLeft", "PageUp", "Backspace"].includes(event.key)) {
+      event.preventDefault();
+      previous();
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      show(0, true);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      show(slides.length - 1, true);
+    }
+  });
+
+  window.addEventListener("click", function (event) {
+    if (event.target.closest("a")) return;
+    if (event.clientX >= window.innerWidth / 2) next();
+    else previous();
+  });
+
+  window.addEventListener("touchstart", function (event) {
+    touchStartX = event.changedTouches[0].clientX;
+  }, { passive: true });
+
+  window.addEventListener("touchend", function (event) {
+    if (touchStartX === null) return;
+    const delta = event.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) > 40) {
+      if (delta < 0) next();
+      else previous();
+    }
+    touchStartX = null;
+  }, { passive: true });
+
+  window.addEventListener("hashchange", function () {
+    show(indexFromHash(), false);
+  });
+
+  show(indexFromHash(), false);
+})();
+</script>
+</body>
+</html>
