@@ -773,35 +773,35 @@
 <section class="slide on" id="slide-1" data-number="01" data-section="Orientation" aria-label="Title slide">
   <div class="meta-row"><span>ICISE</span><span>10 August 2026</span></div>
   <h1>Agentic research<br>workflows <span class="hero-word">with Codex</span></h1>
-  <p class="lede">A practical orientation for moving from unfamiliar research code to a verified scientific result.</p>
+  <p class="lede">An orientation to using Codex with research code, documents, and verification.</p>
   <div class="title-mark" aria-hidden="true">›_</div>
 </section>
 
 <section class="slide" id="slide-2" data-number="02" data-section="Orientation" aria-label="Orientation promise">
-  <p class="kicker">The promise</p>
-  <h2>Leave with a workflow,<br>not a feature list.</h2>
+  <p class="kicker">Session outline</p>
+  <h2>Two examples use the same<br>working process.</h2>
   <div class="promise">
     <div class="promise-block">
-      <span class="label">Starting point</span>
-      <strong>An unfamiliar repository</strong>
+      <span class="label">Demo 01</span>
+      <strong>Codebase onboarding</strong>
     </div>
     <div class="promise-arrow" aria-hidden="true">→</div>
     <div class="promise-block">
-      <span class="label">Finish line</span>
-      <strong>A result you can verify</strong>
+      <span class="label">Demo 02</span>
+      <strong>Symbolic covariance derivation</strong>
     </div>
   </div>
 </section>
 
 <section class="slide" id="slide-3" data-number="03" data-section="Mental model" aria-label="One sentence mental model">
-  <p class="kicker">The one-sentence model</p>
-  <p class="quote">Chat answers.<br>An agent <em class="acts">acts.</em></p>
-  <p class="lede">It can inspect files, run tools, observe the result, and try again. You can interrupt and redirect it at any point.</p>
+  <p class="kicker">Agentic workflow</p>
+  <p class="quote">Inspect.<br><em class="acts">Act. Check.</em></p>
+  <p class="lede">Codex can inspect files, run tools, observe the output, and repeat when the task requires it. You can interrupt or redirect the session at any point.</p>
 </section>
 
 <section class="slide" id="slide-4" data-number="04" data-section="Mental model" aria-label="Agent loop">
   <p class="kicker">The agent loop</p>
-  <h2>The loop is simple.<br>The work can be deep.</h2>
+  <h2>Most tasks follow the same<br>working loop.</h2>
   <div class="loop" aria-label="Gather context, take action, verify results">
     <div class="loop-stage">
       <b>01</b>
@@ -823,11 +823,11 @@
 
 <section class="slide" id="slide-5" data-number="05" data-section="Mental model" aria-label="Codex working context">
   <p class="kicker">Working context</p>
-  <h2>Codex can work across the<br>whole research environment.</h2>
+  <h2>The working context can include<br>code, tools, and documents.</h2>
   <div class="reach">
     <div class="reach-core">
       <b>The working set</b>
-      <span>Context that can become action</span>
+      <span>Files and tools available to the session</span>
     </div>
     <div class="reach-list">
       <div class="reach-item">Repository files<small>code · tests · configuration</small></div>
@@ -842,7 +842,7 @@
 
 <section class="slide" id="slide-6" data-number="06" data-section="Safe agency" aria-label="Safe agency">
   <p class="kicker">Safe agency</p>
-  <h2>Useful autonomy has<br>explicit boundaries.</h2>
+  <h2>Sandboxing and approvals define<br>the operating boundaries.</h2>
   <div class="three-col">
     <div class="principle">
       <span class="n">01 · BOUNDARY</span>
@@ -857,7 +857,7 @@
     <div class="principle">
       <span class="n">03 · EVIDENCE</span>
       <h3>Verification</h3>
-      <p>Tests, renders, or comparisons define what “done” means.</p>
+      <p>Tests, renders, or comparisons provide checks on the result.</p>
     </div>
   </div>
   <p class="stack-note">User defaults · ~/.codex/config.toml &nbsp;&nbsp; Project overrides · .codex/config.toml for trusted projects</p>
@@ -890,7 +890,7 @@
 
 <section class="slide" id="slide-8" data-number="08" data-section="Customization" aria-label="Skills">
   <p class="kicker">Reusable procedures</p>
-  <h2>A skill turns a good method<br>into a repeatable one.</h2>
+  <h2>Skills package reusable<br>instructions and checks.</h2>
   <div class="skill-line">
     <div class="skill-file">
       <div class="file">SKILL.md</div>
@@ -907,7 +907,7 @@
 
 <section class="slide demo-slide" id="slide-9" data-number="09" data-section="Live demo 01" aria-label="Codebase onboarding demo setup">
   <div class="demo-tag">Live demo 01 · codebase onboarding</div>
-  <h2>First, let Codex learn<br>the codebase.</h2>
+  <h2>Inspect an unfamiliar<br>codebase.</h2>
   <p class="lede"><code>steady-2d-heat-inverse</code> solves a forward heat equation, then infers a spatially varying conductivity through an adjoint gradient and PETSc TAO.</p>
   <div class="demo-context">
     <div><b>What Codex receives</b><span>A clean copy of an unfamiliar repository</span></div>
@@ -918,7 +918,7 @@
 
 <section class="slide" id="slide-10" data-number="10" data-section="Live demo 01" aria-label="Codebase onboarding prompt">
   <p class="kicker">Opening prompt · demo 01</p>
-  <h2>Give the agent a question<br>with an observable finish line.</h2>
+  <h2>State the task and how<br>the result will be checked.</h2>
   <div class="prompt-shell">
     <div class="prompt-bar">
       <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
@@ -931,7 +931,7 @@
 
 <section class="slide" id="slide-11" data-number="11" data-section="Live demo 01" aria-label="Codebase onboarding debrief">
   <p class="kicker">Debrief · demo 01</p>
-  <h2>The result is not a tour.<br>It is a working model.</h2>
+  <h2>An onboarding summary connects<br>structure, tests, and risks.</h2>
   <div class="debrief">
     <div class="science-loop" aria-label="Heat inverse problem data flow">
       <div class="line"><b>h(x,y)</b><span class="arrow">→</span>forward solve<span class="arrow">→</span><b>T</b></div>
@@ -949,13 +949,13 @@
 </section>
 
 <section class="slide" id="slide-12" data-number="12" data-section="Bridge" aria-label="Bridge between demonstrations">
-  <p class="kicker neutral">The escalation</p>
-  <p class="bridge"><span class="step">Understand existing work.</span><br><span class="step">Retain the context.</span><br><span class="step">Create and verify new work.</span></p>
+  <p class="kicker neutral">Two demonstrations</p>
+  <p class="bridge"><span class="step">Demo 01</span><br><span class="step">inspect · map · check</span><br><span class="step">Demo 02</span><br><span class="step">extract · derive · compare</span></p>
 </section>
 
 <section class="slide demo-slide" id="slide-13" data-number="13" data-section="Live demo 02" aria-label="Paper to Mathematica demo setup">
   <div class="demo-tag">Live demo 02 · paper to Mathematica</div>
-  <h2>Now ask for a verified<br>scientific artifact.</h2>
+  <h2>Derive and check the covariance<br>expressions from the paper.</h2>
   <div class="equation">
     Cov[P<sub>ℓ₁</sub>(k), P<sub>ℓ₂</sub>(k)] ∝
     <span class="integral">∫<sub>−1</sub><sup>1</sup> dμ</span>
@@ -968,7 +968,7 @@
 
 <section class="slide" id="slide-14" data-number="14" data-section="Live demo 02" aria-label="Paper to Mathematica prompt">
   <p class="kicker">Opening prompt · demo 02</p>
-  <h2>Ask it to derive, build,<br>run, and compare.</h2>
+  <h2>Derive, run, and<br>compare the result.</h2>
   <div class="prompt-shell">
     <div class="prompt-bar">
       <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
@@ -981,7 +981,7 @@
 
 <section class="slide" id="slide-15" data-number="15" data-section="Live demo 02" aria-label="Paper to Mathematica verification">
   <p class="kicker">Debrief · demo 02</p>
-  <h2>The finish line is evidence,<br>not a generated file.</h2>
+  <h2>The verification script checks<br>all six independent entries.</h2>
   <div class="checks" aria-label="Six covariance verification results">
     <div class="check"><span>C(0,0)</span><span>MATCH</span></div>
     <div class="check"><span>C(0,2)</span><span>MATCH</span></div>
@@ -996,7 +996,7 @@
 
 <section class="slide" id="slide-16" data-number="16" data-section="Practice" aria-label="Prompt recipe">
   <p class="kicker">A reusable prompt recipe</p>
-  <h2>A strong prompt names<br>the finish line.</h2>
+  <h2>A practical prompt<br>includes five pieces.</h2>
   <div class="recipe">
     <div class="recipe-row"><b>01</b><strong>Objective</strong><span>What outcome matters?</span></div>
     <div class="recipe-row"><b>02</b><strong>Context</strong><span>Which files, paper, or data should it use?</span></div>
@@ -1007,14 +1007,13 @@
 </section>
 
 <section class="slide" id="slide-17" data-number="17" data-section="Next move" aria-label="Closing and resources">
-  <p class="kicker">Your next move</p>
-  <h2>Pick one real task.<br>Put verification in the prompt.</h2>
+  <p class="kicker">Resources</p>
+  <h2>Resources for applying the method<br>to a research task.</h2>
   <div class="resource-list">
     <div class="resource"><b>Codex</b><a href="https://developers.openai.com/codex">developers.openai.com/codex</a></div>
     <div class="resource"><b>Project guidance</b><a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">learn.chatgpt.com/docs/agent-configuration/agents-md</a></div>
     <div class="resource"><b>Skills</b><a href="https://learn.chatgpt.com/docs/build-skills">learn.chatgpt.com/docs/build-skills</a></div>
   </div>
-  <p class="eyeline">Questions · then choose your first workflow</p>
   <aside class="speaker-notes"><p>[Sources]</p><p>Official OpenAI documentation links shown on slide.</p></aside>
 </section>
 
