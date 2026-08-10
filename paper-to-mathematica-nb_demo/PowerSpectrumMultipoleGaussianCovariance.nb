@@ -1,0 +1,42 @@
+Notebook[{
+  Cell["Gaussian covariance of galaxy power-spectrum multipoles", "Title"],
+  Cell["Chudaykin and Ivanov (2019): Eqs. (2.7)-(2.8) and (B.1)-(B.2)", "Subtitle"],
+  Cell["Use p0 = P0,g + 1/nbar_g, retain ell = 0, 2, 4, and strip the common factor 2 delta_ij/Nk.", "Text"],
+
+  Cell["Multipole expansion", "Section"],
+  Cell["ClearAll[pg, covReduced, mu, p0, p2, p4, pairs, labels, expected, derived, ell1, ell2, idx];
+pg[mu_] := p0 + p2 LegendreP[2, mu] + p4 LegendreP[4, mu];
+pairs = {{0, 0}, {0, 2}, {0, 4}, {2, 2}, {2, 4}, {4, 4}};
+labels = {\"00\", \"02\", \"04\", \"22\", \"24\", \"44\"};", "Input"],
+
+  Cell["Eq. (B.1): direct integration", "Section"],
+  Cell["covReduced[ell1_, ell2_] := covReduced[ell1, ell2] =
+  FullSimplify[(2 ell1 + 1) (2 ell2 + 1)/2 Integrate[
+    LegendreP[ell1, mu] LegendreP[ell2, mu] pg[mu]^2,
+    {mu, -1, 1}
+  ]];
+derived = AssociationThread[labels, Apply[covReduced, #] & /@ pairs];
+derived", "Input"],
+
+  Cell["Eq. (B.2): stated expressions", "Section"],
+  Cell["expected = <|
+  \"00\" -> p0^2 + p2^2/5 + p4^2/9,
+  \"02\" -> 2 p0 p2 + 2 p2^2/7 + 4 p2 p4/7 + 100 p4^2/693,
+  \"04\" -> 18 p2^2/35 + 2 p0 p4 + 40 p2 p4/77 + 162 p4^2/1001,
+  \"22\" -> 5 p0^2 + 20 p0 p2/7 + 20 p0 p4/7 + 15 p2^2/7 +
+    120 p2 p4/77 + 8945 p4^2/9009,
+  \"24\" -> 36 p0 p2/7 + 200 p0 p4/77 + 108 p2^2/77 +
+    3578 p2 p4/1001 + 900 p4^2/1001,
+  \"44\" -> 9 p0^2 + 360 p0 p2/77 + 2916 p0 p4/1001 +
+    16101 p2^2/5005 + 3240 p2 p4/1001 + 42849 p4^2/17017
+|>;
+expected", "Input"],
+
+  Cell["Cross-check", "Section"],
+  Cell["Do[
+  Print[\"C^(\" <> labels[[idx]] <> \"): \" <>
+    If[TrueQ[FullSimplify[derived[labels[[idx]]] == expected[labels[[idx]]]]],
+      \"MATCH\", \"UNMATCHED\"]],
+  {idx, Length[labels]}
+];", "Input"]
+}, StyleDefinitions -> "Default.nb"]
