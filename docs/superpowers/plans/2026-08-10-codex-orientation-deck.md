@@ -192,7 +192,7 @@ Expected: `terminology PASS` with no matches.
 Run:
 
 ```bash
-node -e "const fs=require('fs'); const s=fs.readFileSync('slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html','utf8'); if((s.match(/<!DOCTYPE html>/gi)||[]).length!==1) throw Error('doctype'); const slides=[...s.matchAll(/<section class=\"slide[^\"]*\" id=\"([^\"]+)\"/g)].map(x=>x[1]); if(slides.length!==17||new Set(slides).size!==17) throw Error('slide ids'); const hrefs=[...s.matchAll(/href=\"([^\"]*)\"/g)].map(x=>x[1]); if(hrefs.some(x=>!x)) throw Error('empty href'); if(hrefs.some(x=>!/^https:\/\/(developers|help)\.openai\.com\//.test(x))) throw Error('non-official link'); console.log('semantic PASS')"
+node -e "const fs=require('fs'); const s=fs.readFileSync('slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html','utf8'); if((s.match(/<!DOCTYPE html>/gi)||[]).length!==1) throw Error('doctype'); const slides=[...s.matchAll(/<section class=\"slide[^\"]*\" id=\"([^\"]+)\"/g)].map(x=>x[1]); if(slides.length!==17||new Set(slides).size!==17) throw Error('slide ids'); const hrefs=[...s.matchAll(/href=\"([^\"]*)\"/g)].map(x=>x[1]); if(hrefs.some(x=>!x)) throw Error('empty href'); if(hrefs.some(x=>!/^https:\/\/(developers\.openai\.com|learn\.chatgpt\.com)\//.test(x))) throw Error('non-official link'); console.log('semantic PASS')"
 ```
 
 Expected: `semantic PASS`.
