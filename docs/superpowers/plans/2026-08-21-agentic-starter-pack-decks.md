@@ -781,7 +781,24 @@ Run:
 cd slide_deck/checks && node overflow.mjs
 ```
 
-Expected: the ICISE deck now runs both a notes-closed and a notes-open pass at each of the four viewports (eight ICISE lines instead of four), all `PASS`, and `overflow: clean`.
+Expected: the ICISE deck now runs both a notes-closed and a notes-open pass at each of the four
+viewports (eight ICISE lines instead of four). The kickoff deck still runs four, because it has
+no notes panel until Task 10.
+
+Work the arithmetic through before you run it, because the known failure now fires **twice**:
+
+| Deck | Runs | Result |
+| --- | ---: | --- |
+| kickoff | 4 | 4 PASS (notes pass skipped — no panel) |
+| ICISE | 8 | 6 PASS, **2 FAIL** — slide 11 @ 1280x620, once notes-closed and once notes-open |
+
+So the expected output is **10 PASS, 2 FAIL, `overflow: 2 finding(s)`, exit code 1**, and both
+findings must name slide 11 at 1280x620. Slide 11 overflows on its own; opening the panel does
+not cause it, and the panel is excluded from the probe by its `data-scrollable` attribute.
+
+A finding naming any other slide, or naming the panel itself, means this task regressed
+something — most likely the panel is clipping instead of scrolling. Stop and report rather than
+adjusting the expectation.
 
 - [ ] **Step 6: Commit**
 
