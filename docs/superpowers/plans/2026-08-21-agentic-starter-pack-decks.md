@@ -1337,6 +1337,17 @@ cd slide_deck/checks && node terminology.mjs
 Expected: both decks `PASS` with `0/0` hits, exit code 0. If the kickoff deck reports any hit, the
 mention is outside the sanctioned note and must be removed rather than accommodated.
 
+**The mechanism has been validated** against a realistic slide-7 fragment, including the failure the
+old ceiling could not catch:
+
+| Deck | Raw hits | After stripping the sanctioned note | Verdict |
+| --- | ---: | ---: | --- |
+| clean | 2 | 0 | PASS |
+| same deck, one stray `Codex` mention on another slide | 3 | 1 | FAIL, correctly |
+
+The second row is the point. At 3 raw hits it sat exactly on the old ceiling and would have passed
+a count-based check. Location-scoping catches it.
+
 - [ ] **Step 5: Verify structural parity**
 
 Run:
