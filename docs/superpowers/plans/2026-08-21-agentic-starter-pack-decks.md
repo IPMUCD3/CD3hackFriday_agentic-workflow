@@ -498,7 +498,19 @@ Run:
 grep -o 'href="[^"]*"' slide_deck/kickoff_overview_2026June12.html
 ```
 
-Expected: one clean `href="https://..."` per line, no doubled quotes, no unterminated values. Count should be 5 — the sixth was the malformed row deleted in step 1.
+Expected: **4** matches, every one a well-formed `href="https://..."`, with no doubled quotes and
+no unterminated values:
+
+```
+href="https://code.claude.com/docs/en"
+href="https://code.claude.com/docs/en/common-workflows"
+href="https://code.claude.com/docs/en/best-practices"
+href="https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf"
+```
+
+The deck had 5 anchors before this task — the 4 above plus the malformed Codex one deleted in
+step 1. Note that one `<div class="row">` carries two anchors, so a line count is not an anchor
+count.
 
 - [ ] **Step 5: Verify all links still resolve**
 
