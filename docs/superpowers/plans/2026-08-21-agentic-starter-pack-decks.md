@@ -738,7 +738,8 @@ Immediately before the closing `</section>` of the last slide — that is, direc
 </div>
 ```
 
-The `data-scrollable` attribute is what the overflow check reads to permit a deliberately scrolling container.
+The `data-notes-panel` attribute is what the overflow check looks for to decide whether to run its
+notes-open pass at all.
 
 - [ ] **Step 3: Wire up the N key**
 
@@ -794,11 +795,38 @@ Work the arithmetic through before you run it, because the known failure now fir
 
 So the expected output is **10 PASS, 2 FAIL, `overflow: 2 finding(s)`, exit code 1**, and both
 findings must name slide 11 at 1280x620. Slide 11 overflows on its own; opening the panel does
-not cause it, and the panel is excluded from the probe by its `data-scrollable` attribute.
+not cause it. The panel is not exempted from the probe — it is checked by `probePanel`, which
+asserts positively that the panel sits inside the viewport and scrolls its own overflow.
 
 A finding naming any other slide, or naming the panel itself, means this task regressed
 something — most likely the panel is clipping instead of scrolling. Stop and report rather than
 adjusting the expectation.
+
+- [ ] **Step 5b: Prove the panel assertion can actually fail**
+
+`probePanel` asserts that the panel scrolls rather than clips. If no slide's notes are ever tall
+enough to overflow the panel, that assertion is vacuous — it passes because it never fires, which
+is the same defect class this check was just fixed for. Verify it can fail, then revert.
+
+Temporarily change the `#notes-panel` rule so any content overflows a tiny box that cannot scroll:
+
+```css
+    max-height: 40px;
+    overflow-y: hidden;
+```
+
+Run:
+
+```bash
+cd slide_deck/checks && node overflow.mjs
+```
+
+Expected: **new failures appear**, naming `notes-panel-clips-content` with a non-zero hidden-pixel
+count and `overflow-y: hidden`. If the output is unchanged, the assertion is not wired up — stop
+and report, because the check is not testing what it claims.
+
+Then revert both properties to `max-height: 62vh` and `overflow-y: auto`, re-run, and confirm the
+output returns to 10 PASS / 2 FAIL. Do not commit the temporary values.
 
 - [ ] **Step 6: Commit**
 
