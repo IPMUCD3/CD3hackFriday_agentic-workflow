@@ -11,12 +11,12 @@
     --surface: #F3E8CF;
     --surface-2: #E9DCBE;
     --ink: #141413;
-    --muted: #6E6B63;
-    --dim: #7A7770;
+    --muted: #5C594F;
+    --dim: #5F5C55;
     --line: rgba(20, 20, 19, 0.15);
     --line-strong: rgba(20, 20, 19, 0.28);
-    --green: #D97757;
-    --green-soft: #A8501F;
+    --green: #96421C;
+    --green-soft: #7E3717;
     --green-wash: rgba(217, 119, 87, 0.14);
     --amber: #B98A3B;
     --sans: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
@@ -527,7 +527,9 @@
     gap: 8px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--line);
-    color: var(--dim);
+    /* The prompt shell is a dark terminal block in BOTH decks, so this label
+       cannot use a theme token -- --dim is dark on the ivory deck. */
+    color: #8A8A85;
     font: 600 12px/1 var(--mono);
   }
 

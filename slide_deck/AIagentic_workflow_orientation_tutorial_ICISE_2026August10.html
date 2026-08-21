@@ -12,7 +12,7 @@
     --surface-2: #202020;
     --ink: #F4F4F0;
     --muted: #A6A6A0;
-    --dim: #686865;
+    --dim: #8E8E88;
     --line: rgba(244, 244, 240, 0.15);
     --line-strong: rgba(244, 244, 240, 0.28);
     --green: #10A37F;
@@ -527,7 +527,9 @@
     gap: 8px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--line);
-    color: var(--dim);
+    /* The prompt shell is a dark terminal block in BOTH decks, so this label
+       cannot use a theme token -- --dim is dark on the ivory deck. */
+    color: #8A8A85;
     font: 600 12px/1 var(--mono);
   }
 
