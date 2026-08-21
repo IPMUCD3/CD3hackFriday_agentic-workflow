@@ -5,6 +5,20 @@ import { DECKS, DECK_DIR } from './decks.mjs';
 const REPO = join(DECK_DIR, '..');
 const DEMO_DIRS = ['codebase-onboarding_demo', 'paper-to-mathematica-nb_demo'];
 
+// The spec scopes this check to demo slides: "every filename printed on a demo
+// slide must exist in the corresponding demo directory". A filename anywhere
+// else is not a claim about a local artifact -- a mock terminal transcript uses
+// generic names on purpose, and a .pdf inside an external href is a URL path
+// segment that no local file could ever satisfy. Scanning the whole document
+// flags both and can never go green.
+const demoSlideText = (html) =>
+  html
+    .split(/<section\b/)
+    .slice(1)
+    .filter((s) => /class="[^"]*demo-slide/.test(s) || /data-section="Live demo/.test(s))
+    .join('\n')
+    .replace(/href="[^"]*"/g, '');
+
 // Only artifact extensions. Config filenames (CLAUDE.md, AGENTS.md, SKILL.md,
 // settings.json, config.toml) name conventions, not files that must exist here.
 const ARTIFACT = /\b[A-Za-z0-9_][A-Za-z0-9_.-]*\.(wls|nb|pdf|py)\b/g;
@@ -36,7 +50,7 @@ if (absentDirs.length) {
 let failures = 0;
 for (const deck of DECKS) {
   const html = readFileSync(join(DECK_DIR, deck.file), 'utf8');
-  const named = new Set((html.match(ARTIFACT) || []).filter((f) => !IGNORE.has(f)));
+  const named = new Set((demoSlideText(html).match(ARTIFACT) || []).filter((f) => !IGNORE.has(f)));
   const missing = [...named].filter((f) => !onDisk.has(f));
   if (missing.length && absentDirs.length) {
     console.warn(`WARN ${deck.name}: unverifiable -> ${missing.join(', ')}`);
