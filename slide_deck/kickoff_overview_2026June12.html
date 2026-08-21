@@ -2,201 +2,1118 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
 <title>Claude Code — CD3 Hack Friday</title>
 <style>
-  :root{
-    --ivory:#EBDBBC; --ink:#141413; --muted:#6E6B63; --coral:#D97757;
-    --hairline:#E5E1D8; --term:#1A1915; --termtext:#E8E6DF;
-    --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
-    --sans:ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  :root {
+    --bg: #EBDBBC;
+    --surface: #F3E8CF;
+    --surface-2: #E9DCBE;
+    --ink: #141413;
+    --muted: #5C594F;
+    --dim: #5F5C55;
+    --line: rgba(20, 20, 19, 0.15);
+    --line-strong: rgba(20, 20, 19, 0.28);
+    --green: #96421C;
+    --green-soft: #7E3717;
+    --green-wash: rgba(217, 119, 87, 0.14);
+    --amber: #B98A3B;
+    --sans: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    --pad-x: clamp(54px, 7.2vw, 112px);
+    --pad-y: clamp(48px, 7.4vh, 78px);
+    --panel: #F8F0DC;
+    --panel-fg: #4A4740;
   }
-  *{box-sizing:border-box;margin:0}
-  html,body{height:100%}
-  body{background:var(--ivory);color:var(--ink);cursor:pointer;user-select:none;overflow:hidden}
-  #bar{position:fixed;top:0;left:0;height:3px;background:var(--coral);transition:width .24s ease;z-index:2}
-  .slide{position:fixed;inset:0;display:none;flex-direction:column;justify-content:center;padding:8vh 9vw}
-  .slide.on{display:flex;animation:rise .36s ease both}
-  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-  @media (prefers-reduced-motion:reduce){.slide.on{animation:none}#bar{transition:none}}
-  .eyebrow{font-family:var(--mono);font-size:14px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--coral);margin-bottom:28px}
-  h1{font-family:var(--serif);font-weight:500;font-size:56px;line-height:1.12;max-width:16em}
-  h1.xl{font-size:84px} h1.lg{font-size:64px} h1.sm{font-size:44px}
-  .accent{color:var(--coral)} em{font-style:italic}
-  .sub{font-family:var(--sans);font-size:21px;line-height:1.55;max-width:32em;color:var(--muted);margin-top:28px}
-  .list{margin-top:44px;display:flex;flex-direction:column;gap:30px}
-  .row{display:flex;gap:24px;align-items:baseline;max-width:38em}
-  .row b{font-family:var(--mono);font-weight:400;font-size:14px;color:var(--coral);min-width:160px;flex-shrink:0}
-  .row span{font-family:var(--sans);font-size:19px;line-height:1.5}
-  .term{background:var(--term);border-radius:14px;border:1px solid #2C2A25;box-shadow:0 18px 50px rgba(20,20,19,.18);max-width:760px;margin-top:36px;overflow:hidden}
-  .termbar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid #2C2A25}
-  .dot{width:10px;height:10px;border-radius:5px;background:#3D3B35}
-  .termbar i{font-family:var(--mono);font-style:normal;font-size:12px;color:#8A877E;margin-left:8px}
-  .termbody{padding:20px 24px;font-family:var(--mono);font-size:15.5px;line-height:1.75;white-space:pre-wrap}
-  .u{color:var(--termtext)} .a{color:#9C9990} .d{color:var(--coral)}
-  table.ladder{margin-top:44px;border-collapse:collapse;max-width:860px;width:100%}
-  .ladder th{font-family:var(--mono);font-weight:400;font-size:12.5px;color:var(--muted);letter-spacing:.12em;text-align:left;padding:0 16px 10px 0}
-  .ladder td{border-top:1px solid var(--hairline);padding:16px 16px 16px 0}
-  .ladder td:first-child{font-family:var(--sans);font-size:16px;min-width:210px}
-  .ladder code{font-family:var(--mono);font-size:15px}
-  .ladder tr.me code{color:var(--coral)}
-  .note{font-family:var(--mono);font-size:13px;color:var(--coral);letter-spacing:.1em;margin-top:14px}
-  svg{margin-top:48px;max-width:760px;width:100%}
-  svg text{font-family:var(--sans);font-size:17px;fill:var(--ink)}
-  svg text.c{fill:var(--coral)} svg text.s{font-size:13.5px;fill:var(--muted)} svg text.t{font-size:15px} svg text.m{font-family:var(--mono);font-size:13px;fill:var(--coral);letter-spacing:.1em}
-  #counter{position:fixed;bottom:28px;right:36px;font-family:var(--mono);font-size:13px;color:var(--muted);z-index:2}
+
+  * { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    overflow: hidden;
+    cursor: default;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 84% 12%, rgba(16, 163, 127, 0.09), transparent 27%),
+      linear-gradient(rgba(255,255,255,0.023) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.023) 1px, transparent 1px);
+    background-size: auto, 54px 54px, 54px 54px;
+    mask-image: linear-gradient(to bottom, black, transparent 88%);
+  }
+
+  a { color: var(--green-soft); text-underline-offset: 5px; }
+  code { font-family: var(--mono); }
+
+  #progress-track {
+    position: fixed;
+    z-index: 20;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    background: rgba(255,255,255,0.04);
+  }
+
+  #progress {
+    height: 100%;
+    width: 0;
+    background: var(--green);
+    transition: width 220ms ease;
+  }
+
+  #chrome {
+    position: fixed;
+    z-index: 20;
+    left: 34px;
+    right: 34px;
+    bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+  }
+
+  #section-name { text-transform: uppercase; }
+  #counter { font-variant-numeric: tabular-nums; }
+
+  .slide {
+    position: fixed;
+    inset: 0;
+    display: none;
+    overflow: hidden;
+    padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 18px);
+  }
+
+  .slide.on {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    animation: enter 380ms cubic-bezier(.2,.7,.2,1) both;
+  }
+
+  .slide::after {
+    content: attr(data-number);
+    position: absolute;
+    right: clamp(24px, 3vw, 44px);
+    top: clamp(22px, 3.5vh, 34px);
+    font: 700 11px/1 var(--mono);
+    color: var(--dim);
+    letter-spacing: 0.14em;
+  }
+
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .kicker {
+    margin: 0 0 clamp(18px, 3vh, 28px);
+    color: var(--green-soft);
+    font: 700 clamp(12px, 1.05vw, 15px)/1.2 var(--mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .kicker.neutral { color: var(--muted); }
+
+  h1, h2, h3, p { margin: 0; }
+  h1 {
+    max-width: 1050px;
+    font-size: clamp(64px, 7.7vw, 110px);
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+    font-weight: 600;
+  }
+
+  h2 {
+    max-width: 1060px;
+    font-size: clamp(43px, 4.9vw, 70px);
+    line-height: 1.03;
+    letter-spacing: -0.042em;
+    font-weight: 560;
+  }
+
+  h3 {
+    font-size: clamp(22px, 2vw, 29px);
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+  }
+
+  .hero-word { color: var(--green-soft); }
+  .muted { color: var(--muted); }
+  .dim { color: var(--dim); }
+  .mono { font-family: var(--mono); }
+  .nowrap { white-space: nowrap; }
+
+  .lede {
+    max-width: 830px;
+    margin-top: clamp(22px, 3.4vh, 34px);
+    color: var(--muted);
+    font-size: clamp(20px, 1.72vw, 27px);
+    line-height: 1.46;
+    letter-spacing: -0.015em;
+  }
+
+  .small-note {
+    color: var(--muted);
+    font-size: clamp(16px, 1.28vw, 20px);
+    line-height: 1.48;
+  }
+
+  .eyeline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 38px;
+    color: var(--muted);
+    font: 600 13px/1.3 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .eyeline::before {
+    content: ">";
+    color: var(--green);
+    font-size: 18px;
+  }
+
+  .title-mark {
+    position: absolute;
+    right: 7vw;
+    bottom: 10vh;
+    color: var(--green);
+    font: 500 clamp(120px, 20vw, 280px)/0.72 var(--mono);
+    opacity: 0.18;
+    letter-spacing: -0.16em;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 22px;
+    margin-bottom: clamp(26px, 4vh, 38px);
+    color: var(--muted);
+    font: 650 13px/1.2 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .meta-row span + span::before {
+    content: "·";
+    margin-right: 22px;
+    color: var(--green);
+  }
+
+  .promise {
+    margin-top: clamp(42px, 7vh, 66px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr);
+    align-items: center;
+    max-width: 1120px;
+  }
+
+  .promise-block {
+    border-top: 1px solid var(--line-strong);
+    padding-top: 20px;
+  }
+
+  .promise-block .label {
+    color: var(--dim);
+    font: 700 12px/1.2 var(--mono);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .promise-block strong {
+    display: block;
+    margin-top: 10px;
+    font-size: clamp(25px, 2.4vw, 36px);
+    line-height: 1.22;
+    letter-spacing: -0.03em;
+  }
+
+  .promise-arrow {
+    text-align: center;
+    color: var(--green);
+    font-size: 38px;
+  }
+
+  .quote {
+    max-width: 1180px;
+    font-size: clamp(70px, 8.2vw, 118px);
+    line-height: 0.98;
+    letter-spacing: -0.06em;
+    font-weight: 590;
+  }
+
+  .quote .acts {
+    color: var(--green-soft);
+    font-style: normal;
+  }
+
+  .loop {
+    margin-top: clamp(42px, 7vh, 68px);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 20px;
+    align-items: start;
+    max-width: 1160px;
+  }
+
+  .loop-stage {
+    padding-top: 18px;
+    border-top: 2px solid var(--line-strong);
+  }
+
+  .loop-stage.active { border-color: var(--green); }
+
+  .loop-stage b {
+    display: block;
+    color: var(--green-soft);
+    font: 700 13px/1.2 var(--mono);
+    letter-spacing: 0.12em;
+  }
+
+  .loop-stage span {
+    display: block;
+    margin-top: 12px;
+    font-size: clamp(23px, 2.25vw, 34px);
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+  }
+
+  .loop-arrow {
+    padding-top: 22px;
+    color: var(--dim);
+    font-size: 28px;
+  }
+
+  .repeat {
+    margin-top: 30px;
+    color: var(--muted);
+    font: 650 14px/1.4 var(--mono);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .repeat span { color: var(--green-soft); }
+
+  .reach {
+    margin-top: clamp(42px, 6.4vh, 62px);
+    display: grid;
+    grid-template-columns: 0.72fr 1.35fr;
+    column-gap: 72px;
+    align-items: start;
+    max-width: 1120px;
+  }
+
+  .reach-core {
+    padding: 25px 0 28px;
+    border-block: 1px solid var(--line-strong);
+  }
+
+  .reach-core b {
+    color: var(--green);
+    font: 700 13px/1.2 var(--mono);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .reach-core span {
+    display: block;
+    margin-top: 15px;
+    font-size: clamp(29px, 3vw, 43px);
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+  }
+
+  .reach-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 38px;
+  }
+
+  .reach-item {
+    padding: 16px 0 17px;
+    border-top: 1px solid var(--line);
+    font-size: clamp(20px, 1.85vw, 28px);
+    line-height: 1.28;
+    letter-spacing: -0.025em;
+  }
+
+  .reach-item small {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 0.62em;
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
+
+  .three-col {
+    margin-top: clamp(42px, 6.5vh, 62px);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 44px;
+    max-width: 1160px;
+  }
+
+  .principle {
+    padding-top: 18px;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .principle .n {
+    color: var(--green);
+    font: 700 13px/1 var(--mono);
+    letter-spacing: 0.12em;
+  }
+
+  .principle h3 { margin-top: 15px; }
+  .principle p {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: clamp(17px, 1.45vw, 22px);
+    line-height: 1.45;
+  }
+
+  .stack {
+    margin-top: clamp(38px, 6vh, 58px);
+    max-width: 1020px;
+  }
+
+  .stack-row {
+    display: grid;
+    grid-template-columns: minmax(350px, 1.05fr) minmax(260px, 1fr) 150px;
+    gap: 24px;
+    align-items: center;
+    padding: 17px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .stack-row:last-child { border-bottom: 1px solid var(--line); }
+
+  .stack-row code {
+    color: var(--green-soft);
+    font-size: clamp(16px, 1.35vw, 20px);
+  }
+
+  .stack-row strong {
+    font-size: clamp(19px, 1.65vw, 25px);
+    font-weight: 560;
+  }
+
+  .stack-row span {
+    color: var(--muted);
+    font-size: clamp(15px, 1.2vw, 18px);
+    text-align: right;
+  }
+
+  .stack-note {
+    margin-top: 18px;
+    color: var(--muted);
+    font: 600 13px/1.4 var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .skill-line {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 64px;
+    margin-top: clamp(42px, 6.6vh, 62px);
+    max-width: 1120px;
+  }
+
+  .skill-file {
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+  }
+
+  .skill-file .file {
+    color: var(--green-soft);
+    font: 700 18px/1.2 var(--mono);
+  }
+
+  .skill-file p {
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  .method {
+    display: grid;
+    gap: 18px;
+  }
+  /* .method inherits its top spacing from .skill-line when nested. Used
+     standalone as a slide's main block it needs its own, matching .recipe. */
+  .slide > .method { margin-top: clamp(38px, 5.7vh, 56px); }
+
+  .method-row {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 18px;
+    align-items: baseline;
+  }
+
+  .method-row b {
+    color: var(--green);
+    font: 700 13px/1 var(--mono);
+  }
+
+  .method-row span {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+    font-size: clamp(20px, 1.8vw, 27px);
+    line-height: 1.3;
+  }
+
+  .demo-slide {
+    background:
+      radial-gradient(circle at 78% 32%, rgba(16, 163, 127, 0.17), transparent 28%),
+      var(--bg);
+  }
+
+  .demo-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
+    margin-bottom: 28px;
+    color: var(--green-soft);
+    font: 700 13px/1 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  .demo-tag::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 6px var(--green-wash);
+  }
+
+  .prompt-shell {
+    margin-top: clamp(32px, 4.7vh, 46px);
+    max-width: 1120px;
+    background: #111;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,.34);
+  }
+
+  .prompt-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    /* The prompt shell is a dark terminal block in BOTH decks, so this label
+       cannot use a theme token -- --dim is dark on the ivory deck. */
+    color: #8A8A85;
+    font: 600 12px/1 var(--mono);
+  }
+
+  .prompt-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3C3C3C;
+  }
+
+  .prompt-path { margin-left: 8px; }
+
+  .prompt-body {
+    padding: clamp(22px, 3vw, 34px);
+    color: #E9E9E4;
+    font: 500 clamp(16px, 1.35vw, 20px)/1.62 var(--mono);
+  }
+
+  .prompt-body::before {
+    content: ">";
+    color: var(--green);
+    margin-right: 12px;
+    font-weight: 800;
+  }
+
+  .handoff {
+    margin-top: 22px;
+    color: var(--green-soft);
+    font: 750 13px/1.2 var(--mono);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .debrief {
+    margin-top: clamp(34px, 5vh, 50px);
+    display: grid;
+    grid-template-columns: 1.18fr 0.82fr;
+    gap: 70px;
+    max-width: 1150px;
+  }
+
+  .science-loop {
+    font-family: var(--mono);
+    font-size: clamp(17px, 1.5vw, 22px);
+    line-height: 1.55;
+  }
+
+  .science-loop .line {
+    padding: 15px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .science-loop .line:last-child { border-bottom: 1px solid var(--line); }
+  .science-loop b { color: var(--green-soft); }
+  .science-loop .arrow { color: var(--green); padding-inline: 8px; }
+
+  .evidence-list {
+    display: grid;
+    gap: 16px;
+  }
+
+  .evidence-list p {
+    color: var(--muted);
+    font-size: clamp(17px, 1.45vw, 21px);
+    line-height: 1.42;
+  }
+
+  .evidence-list strong {
+    display: block;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.8em;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .checks {
+    margin-top: clamp(34px, 5.2vh, 52px);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0 34px;
+    max-width: 1080px;
+  }
+
+  .check {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+    font: 600 clamp(18px, 1.65vw, 24px)/1.3 var(--mono);
+  }
+
+  .check:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
+  .check span:last-child { color: var(--green-soft); font-size: 0.8em; }
+
+  .recipe {
+    margin-top: clamp(38px, 5.7vh, 56px);
+    max-width: 1160px;
+  }
+
+  .recipe-row {
+    display: grid;
+    grid-template-columns: 62px 190px 1fr;
+    align-items: baseline;
+    gap: 20px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .recipe-row:last-child { border-bottom: 1px solid var(--line); }
+  .recipe-row b {
+    color: var(--green);
+    font: 700 13px/1 var(--mono);
+  }
+
+  .recipe-row strong {
+    font-size: clamp(19px, 1.65vw, 25px);
+    font-weight: 600;
+  }
+
+  .recipe-row span {
+    color: var(--muted);
+    font-size: clamp(17px, 1.4vw, 21px);
+  }
+
+  .resource-list {
+    margin-top: clamp(34px, 5vh, 48px);
+    max-width: 1020px;
+  }
+
+  .resource {
+    display: grid;
+    grid-template-columns: 190px 1fr;
+    gap: 24px;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .resource:last-child { border-bottom: 1px solid var(--line); }
+
+  .resource b {
+    color: var(--muted);
+    font: 700 12px/1.4 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+  }
+
+  .resource a {
+    font-size: clamp(17px, 1.45vw, 21px);
+    line-height: 1.35;
+  }
+
+  .speaker-notes { display: none; }
+
+  #notes-panel {
+    position: fixed;
+    right: 0;
+    bottom: 52px;
+    width: min(420px, 38vw);
+    max-height: 62vh;
+    overflow-y: auto;
+    padding: 24px 28px 28px;
+    background: var(--panel);
+    border-top: 1px solid var(--green-soft);
+    border-left: 1px solid var(--green-soft);
+    border-bottom: 1px solid var(--green-soft);
+    z-index: 30;
+    display: none;
+  }
+  #notes-panel.open { display: block; }
+  #notes-panel h4 {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+  #notes-panel p { font-size: 14.5px; line-height: 1.6; color: var(--panel-fg); margin-bottom: 10px; }
+  #notes-panel p:last-child { margin-bottom: 0; }
+  #notes-panel .empty { color: var(--dim); font-style: italic; }
+
+  @media (max-width: 920px) {
+    :root { --pad-x: 44px; --pad-y: 48px; }
+    .promise { grid-template-columns: 1fr 46px 1fr; }
+    .reach, .skill-line, .debrief { column-gap: 34px; }
+    .three-col { gap: 24px; }
+    .stack-row { grid-template-columns: minmax(330px, 1.05fr) minmax(230px, 1fr) 130px; }
+  }
+
+  @media (max-aspect-ratio: 4/3) {
+    h1 { font-size: clamp(56px, 10vw, 84px); }
+    h2 { font-size: clamp(38px, 6.6vw, 58px); }
+    .slide { justify-content: flex-start !important; padding-top: 10vh; }
+    .loop, .three-col { gap: 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide.on { animation: none; }
+    #progress { transition: none; }
+  }
 </style>
 </head>
 <body>
-<div id="bar"></div>
+<div id="progress-track" aria-hidden="true"><div id="progress"></div></div>
+<div id="chrome" aria-hidden="true">
+  <span id="section-name">Orientation</span>
+  <span id="counter">01 / 17 · ← →</span>
+</div>
 
-<section class="slide"><div class="eyebrow">CD3 Hack Friday · 12 June 2026 · Balcony A</div>
-<h1 class="xl">Agents in the terminal</h1>
-<p class="sub">The same mental model covers Claude Code and Codex. The examples are research workflows, because that is what we do.</p></section>
+<section class="slide on" id="slide-1" data-number="01" data-section="Orientation" aria-label="Title slide">
+  <div class="meta-row"><span>CD3 Hack Friday · Balcony A</span><span>12 June 2026</span></div>
+  <h1>In the terminal<br>with <span class="hero-word">Claude Code</span></h1>
+  <p class="lede">An orientation to using Claude Code with research code, documents, and verification.</p>
+  <div class="title-mark" aria-hidden="true">›_</div>
+  <aside class="speaker-notes"><p>Notes</p><p>CD3 Hack Friday, 12 June 2026. The examples are research workflows because that is the work this room does. Press N on any slide to see the background behind it.</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">The one-sentence model</div>
-<h1>Chat answers.<br>An agent <span class="accent">acts</span>.</h1>
-<p class="sub">It reads your files, runs your code, looks at its own output, and tries again — until the task is done or you steer it elsewhere.</p></section>
+<section class="slide" id="slide-2" data-number="02" data-section="Orientation" aria-label="Orientation promise">
+  <p class="kicker">Session outline</p>
+  <h2>Two examples use the same<br>working process.</h2>
+  <div class="promise">
+    <div class="promise-block">
+      <span class="label">Demo 01</span>
+      <strong>Codebase onboarding</strong>
+    </div>
+    <div class="promise-arrow" aria-hidden="true">→</div>
+    <div class="promise-block">
+      <span class="label">Demo 02</span>
+      <strong>Symbolic covariance derivation</strong>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>Roughly ten minutes on the model, then two live demonstrations with a debrief after each, then the prompt recipe and where to start. The demonstrations are the point; the slides exist to frame them.</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">How it works</div>
-<h1 class="sm">One loop, three phases.</h1>
-<svg viewBox="0 0 760 210">
-<g fill="none" stroke="#141413" stroke-width="1.5"><rect x="20" y="60" width="180" height="64" rx="12"/><rect x="240" y="60" width="180" height="64" rx="12"/></g>
-<rect x="460" y="60" width="180" height="64" rx="12" fill="none" stroke="#D97757" stroke-width="1.5"/>
-<text x="110" y="98" text-anchor="middle">gather context</text>
-<text x="330" y="98" text-anchor="middle">take action</text>
-<text x="550" y="98" text-anchor="middle" class="c">verify results</text>
-<g stroke="#6E6B63" stroke-width="1.5" fill="none"><line x1="200" y1="92" x2="232" y2="92"/><path d="M232 86 L240 92 L232 98"/><line x1="420" y1="92" x2="452" y2="92"/><path d="M452 86 L460 92 L452 98"/></g>
-<path d="M550 124 V168 H110 V124" fill="none" stroke="#D97757" stroke-width="1.5"/>
-<path d="M104 132 L110 122 L116 132" fill="none" stroke="#D97757" stroke-width="1.5"/>
-<text x="330" y="188" text-anchor="middle" class="m">REPEAT · COURSE-CORRECT · YOU CAN INTERRUPT ANYTIME</text>
-</svg>
-<p class="sub">A question may only need context. A bug fix cycles through all three, dozens of actions deep. You are part of the loop too: you can interrupt and steer at any point.</p></section>
+<section class="slide" id="slide-3" data-number="03" data-section="Mental model" aria-label="One sentence mental model">
+  <p class="kicker">Agentic workflow</p>
+  <p class="quote">Chat answers.<br><em class="acts">An agent acts.</em></p>
+  <p class="lede">Claude Code can inspect files, run tools, observe the output, and repeat when the task requires it. You can interrupt or redirect the session at any point.</p>
+</section>
 
-<section class="slide"><div class="eyebrow">What that looks like</div>
-<h1 class="sm">A session, in six lines.</h1>
-<div class="term"><div class="termbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><i>claude — paper-to-mathematica-nb_demo</i></div>
-<div class="termbody"><span class="u">&gt; can you read PDFs and execute wolframscript?</span>
-<span class="a">  wolframscript found ✓ · PDF reading ✓</span>
-<span class="u">&gt; read p.45, Eq.(B1–B2). Explain the assumptions, then build a Mathematica notebook: do the μ integral, evaluate the covariance.</span>
-<span class="a">  Read paper.pdf · Write B2_covariance.wls · Run wolframscript</span>
-<span class="a">  Simplify — terms grouped to mirror Eq.(B2) line by line</span>
-<span class="d">  Notebook ready: one cell per term of (B2). Compare against jaxPTPolyPol next?</span></div></div></section>
+<section class="slide" id="slide-4" data-number="04" data-section="Mental model" aria-label="Agent loop">
+  <p class="kicker">The agent loop</p>
+  <h2>Most tasks follow the same<br>working loop.</h2>
+  <div class="loop" aria-label="Gather context, take action, verify results">
+    <div class="loop-stage">
+      <b>01</b>
+      <span>Gather<br>context</span>
+    </div>
+    <div class="loop-arrow" aria-hidden="true">→</div>
+    <div class="loop-stage">
+      <b>02</b>
+      <span>Take<br>action</span>
+    </div>
+    <div class="loop-arrow" aria-hidden="true">→</div>
+    <div class="loop-stage active">
+      <b>03</b>
+      <span>Verify<br>results</span>
+    </div>
+  </div>
+  <p class="repeat">Repeat · course-correct · <span>the researcher stays in the loop</span></p>
+  <aside class="speaker-notes"><p>Notes</p><p>You are inside this loop, not watching it. Interrupt at any point and redirect — you do not have to let a run finish to correct it. A question may need only the first phase; a bug fix can cycle through all three dozens of times.</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">Something for everyone</div>
-<h1 class="sm">Three depths, <span class="accent">one ladder</span>.</h1>
-<table class="ladder">
-<tr><th>WHO</th><th>START WITH</th><th>WHAT YOU LEAVE WITH</th></tr>
-<tr><td>new users</td><td><code>app or CLI · one global memory file · use preinstalled skills</code></td><td>generic agents for generic tasks</td></tr>
-<tr><td>power users</td><td><code>project + personal memory · permissions · install &amp; build skills</code></td><td>agents with tailored routines that can be combined</td></tr>
-<tr class="me"><td>superpower users</td><td><code>hooks · subagents · MCP · routines → shipped as a plugin</code></td><td>human-in-the-loop personal workflows</td></tr>
-</table>
-<div class="note">Each row builds on the previous one — move up when you are ready.</div></section>
+<section class="slide" id="slide-5" data-number="05" data-section="Mental model" aria-label="Claude Code working context">
+  <p class="kicker">Working context</p>
+  <h2>The working context can include<br>code, tools, and documents.</h2>
+  <div class="reach">
+    <div class="reach-core">
+      <b>The working set</b>
+      <span>Files and tools available to the session</span>
+    </div>
+    <div class="reach-list">
+      <div class="reach-item">Repository files<small>code · tests · configuration</small></div>
+      <div class="reach-item">Terminal commands<small>build · run · inspect</small></div>
+      <div class="reach-item">Documents<small>papers · notes · specifications</small></div>
+      <div class="reach-item">Local tools<small>notebooks · Wolfram · JAX</small></div>
+      <div class="reach-item">Connected services<small>through authorized tools</small></div>
+      <div class="reach-item">Its own output<small>evidence for the next iteration</small></div>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>What is not in the working set matters as much as what is: anything outside the directory you started in, anything you have not shown it, and anything it cannot reach with a tool. It does not know your unpushed branches, yesterday's notebook output, or what you meant but did not write.</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">The map</div>
-<h1 class="sm">Everything hangs off the loop.</h1>
-<svg viewBox="0 0 760 430">
-<!-- memory / settings inputs -->
-<g fill="none" stroke="#141413" stroke-width="1.5">
-<rect x="60" y="16" width="250" height="62" rx="12"/><rect x="450" y="16" width="250" height="62" rx="12"/>
-</g>
-<text x="185" y="40" text-anchor="middle" class="t">memory — what it knows</text>
-<text x="185" y="62" text-anchor="middle" class="s">CLAUDE.md · AGENTS.md</text>
-<text x="575" y="40" text-anchor="middle" class="t">settings — how it may act</text>
-<text x="575" y="62" text-anchor="middle" class="s">settings.json · config.toml</text>
-<!-- triggers -->
-<rect x="20" y="146" width="180" height="62" rx="12" fill="none" stroke="#141413" stroke-width="1.5"/>
-<text x="110" y="170" text-anchor="middle" class="t">triggers</text>
-<text x="110" y="192" text-anchor="middle" class="s">you · @mention · schedule</text>
-<!-- center agent -->
-<rect x="280" y="138" width="200" height="78" rx="14" fill="none" stroke="#D97757" stroke-width="2"/>
-<text x="380" y="168" text-anchor="middle" class="c" style="font-size:18px">the agent</text>
-<text x="380" y="192" text-anchor="middle" class="s">gather → act → verify</text>
-<!-- connectors -->
-<g stroke="#6E6B63" stroke-width="1.5" fill="none">
-<line x1="185" y1="78" x2="330" y2="138"/><line x1="575" y1="78" x2="430" y2="138"/>
-<line x1="200" y1="177" x2="272" y2="177"/><path d="M272 171 L280 177 L272 183"/>
-<line x1="320" y1="216" x2="225" y2="268"/><line x1="360" y1="216" x2="340" y2="268"/>
-<line x1="400" y1="216" x2="440" y2="268"/><line x1="440" y1="216" x2="555" y2="268"/>
-</g>
-<!-- plugin group -->
-<rect x="80" y="252" width="600" height="150" rx="14" fill="none" stroke="#D97757" stroke-width="1.5" stroke-dasharray="6 6"/>
-<text x="380" y="392" text-anchor="middle" class="m">PLUGIN — SHIP THEM TOGETHER</text>
-<g fill="none" stroke="#141413" stroke-width="1.5">
-<rect x="100" y="272" width="125" height="62" rx="12"/><rect x="245" y="272" width="125" height="62" rx="12"/>
-<rect x="390" y="272" width="125" height="62" rx="12"/><rect x="535" y="272" width="125" height="62" rx="12"/>
-</g>
-<text x="162" y="298" text-anchor="middle" class="t">skills</text><text x="162" y="318" text-anchor="middle" class="s">procedures</text>
-<text x="307" y="298" text-anchor="middle" class="t">hooks</text><text x="307" y="318" text-anchor="middle" class="s">guarantees</text>
-<text x="452" y="298" text-anchor="middle" class="t">subagents</text><text x="452" y="318" text-anchor="middle" class="s">delegation</text>
-<text x="597" y="298" text-anchor="middle" class="t">MCP</text><text x="597" y="318" text-anchor="middle" class="s">reach</text>
-</svg></section>
+<section class="slide" id="slide-6" data-number="06" data-section="Control" aria-label="Permission boundaries">
+  <p class="kicker">Boundaries</p>
+  <h2>Permission rules decide<br>what it may touch.</h2>
+  <div class="three-col">
+    <div class="principle">
+      <span class="n">01 · AUTOMATIC</span>
+      <h3>Allow</h3>
+      <p>Auto-approved — e.g. Read(**), Bash(pytest *).</p>
+    </div>
+    <div class="principle">
+      <span class="n">02 · CHECKPOINT</span>
+      <h3>Ask</h3>
+      <p>Pauses for confirmation — e.g. Edit(**), Bash(git commit *).</p>
+    </div>
+    <div class="principle">
+      <span class="n">03 · BOUNDARY</span>
+      <h3>Deny</h3>
+      <p>Always blocked — e.g. Read(./.env), Bash(rm -rf *).</p>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>Sources</p><p>https://code.claude.com/docs/en/permissions</p><p>User defaults · ~/.claude/settings.json &nbsp;&nbsp; Project · .claude/settings.json &nbsp;&nbsp; Rules evaluate deny → ask → allow — first match wins; specificity does not affect the order</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">Before your first word</div>
-<h1 class="sm">The chain it loads<br>before the loop runs.</h1>
-<div class="list">
-<div class="row"><b>1 · settings</b><span>how it may act — permissions, environment, hooks</span></div>
-<div class="row"><b>2 · CLAUDE.md</b><span>what it knows — your conventions, the project's rules</span></div>
-<div class="row"><b>3 · your prompt</b><span>what to do — then the gather → act → verify loop begins</span></div>
-</div></section>
+<section class="slide" id="slide-7" data-number="07" data-section="Control" aria-label="CLAUDE.md instruction hierarchy">
+  <p class="kicker">Persistent context</p>
+  <h2>Guidance gets more specific<br>as the work gets closer.</h2>
+  <div class="stack">
+    <div class="stack-row">
+      <code>~/.claude/CLAUDE.md</code>
+      <strong>Personal defaults</strong>
+      <span>every repository</span>
+    </div>
+    <div class="stack-row">
+      <code>./CLAUDE.md</code>
+      <strong>Project conventions</strong>
+      <span>shared in the repo</span>
+    </div>
+    <div class="stack-row">
+      <code>./CLAUDE.local.md</code>
+      <strong>Local rules</strong>
+      <span>not shared, this project</span>
+    </div>
+  </div>
+  <p class="stack-note">Instruction files concatenate from the project root down toward where you are working — the closest guidance is read last.</p>
+  <aside class="speaker-notes" data-cross-tool><p>Notes</p><p>If your repository already has an AGENTS.md for another agent, Claude Code does not read it directly — add a CLAUDE.md containing @AGENTS.md, or symlink one to the other, so both tools read the same instructions.</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">One ladder, two files per rung</div>
-<h1 class="sm">Personal toolkit. <span class="accent">Team playbook.</span></h1>
-<table class="ladder">
-<tr><th>SCOPE</th><th>WHAT IT KNOWS · CLAUDE.md</th><th>HOW IT MAY ACT · SETTINGS</th></tr>
-<tr><td>personal · everywhere</td><td><code>~/.claude/CLAUDE.md</code></td><td><code>~/.claude/settings.json</code></td></tr>
-<tr><td>team · this project</td><td><code>./CLAUDE.md  (in git)</code></td><td><code>.claude/settings.json  (in git)</code></td></tr>
-<tr class="me"><td>personal · this project</td><td><code>CLAUDE.local.md</code></td><td><code>.claude/settings.local.json</code></td></tr>
-</table>
-<div class="note">MORE SPECIFIC WINS · PERMISSIONS MERGE: DENY → ASK → ALLOW</div>
-<div class="note" style="color:var(--muted)">CODEX: SAME LADDER, DIFFERENT NAMES — AGENTS.md (GLOBAL &amp; ./) · ~/.codex/config.toml</div></section>
+<section class="slide" id="slide-8" data-number="08" data-section="Control" aria-label="Failure modes">
+  <p class="kicker">What goes wrong</p>
+  <h2>Three failure modes worth<br>recognizing early.</h2>
+  <div class="three-col">
+    <div class="principle">
+      <span class="n">01 · PLAUSIBLE</span>
+      <h3>Confident and wrong</h3>
+      <p>Fluent output is not evidence. An unverified result is a hypothesis.</p>
+    </div>
+    <div class="principle">
+      <span class="n">02 · DRIFT</span>
+      <h3>Silent scope creep</h3>
+      <p>A small request grows extra edits. Read the diff, not the summary.</p>
+    </div>
+    <div class="principle">
+      <span class="n">03 · REACH</span>
+      <h3>Edits you did not sanction</h3>
+      <p>Boundaries are configuration, not good intentions. Set them first.</p>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>A fourth mode: work better done by hand. If you can write it faster than you can specify it, write it. The loop pays off when verification is cheaper than production.</p><p>Instruction files are context, not enforcement — the agent reads them and tries to comply, but nothing guarantees it. For a hard guarantee, use a hook or a deny rule — a <code>PreToolUse</code> hook that exits <code>2</code> stops the call before permission rules are evaluated.</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">settings.json</div>
-<h1 class="sm">You decide<br>what it may touch.</h1>
-<div class="list">
-<div class="row"><b>allow</b><span>auto-approved — e.g. Read(**), Bash(pytest *)</span></div>
-<div class="row"><b>ask</b><span>pauses for you — e.g. Write(**), Bash(git commit*)</span></div>
-<div class="row"><b>deny</b><span>always blocked — e.g. Read(./.env), Bash(rm -rf *)</span></div>
-</div></section>
+<section class="slide" id="slide-9" data-number="09" data-section="Control" aria-label="Context and cost hygiene">
+  <p class="kicker">Session hygiene</p>
+  <h2>A session has a working<br>memory, and it fills up.</h2>
+  <div class="method">
+    <div class="method-row"><b>01</b><span>Scope the working set — point at the files that matter, not the whole tree</span></div>
+    <div class="method-row"><b>02</b><span>Start fresh when the task changes — a long session carries its whole history</span></div>
+    <div class="method-row"><b>03</b><span>Prefer one verified step to five unverified ones</span></div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>Everything the session has read stays in context and is re-sent with each turn, so a long session is both slower and more expensive than a short one. Quality degrades too: relevant detail competes with everything read earlier.</p><p>Practical rule — one task per session. When you find yourself re-explaining what the session already did, start a new one and give it the conclusion rather than the history.</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">Hooks</div>
-<h1 class="sm">Guarantees,<br>not suggestions.</h1>
-<div class="list">
-<div class="row"><b>what they are</b><span>your shell commands, fired at lifecycle events — PreToolUse, PostToolUse, ...</span></div>
-<div class="row"><b>why they matter</b><span>deterministic: the formatter always runs, the guard always blocks</span></div>
-<div class="row"><b>where they live</b><span>the same settings.json ladder — personal, team, or local</span></div>
-</div></section>
+<section class="slide" id="slide-10" data-number="10" data-section="Practice" aria-label="Prompt recipe">
+  <p class="kicker">A reusable prompt recipe</p>
+  <h2>A practical prompt<br>names its own finish line.</h2>
+  <div class="recipe">
+    <div class="recipe-row"><b>01</b><strong>Objective</strong><span>What outcome matters?</span></div>
+    <div class="recipe-row"><b>02</b><strong>Context</strong><span>Which files, paper, or data should it use?</span></div>
+    <div class="recipe-row"><b>03</b><strong>Constraints</strong><span>What must remain unchanged?</span></div>
+    <div class="recipe-row"><b>04</b><strong>Deliverable</strong><span>Which artifact should exist?</span></div>
+    <div class="recipe-row"><b>05</b><strong>Verification</strong><span>What observation proves it works?</span></div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>Before: "fix the covariance code." After: "The ℓ=4 entry disagrees with Eq. B2. Find the discrepancy, do not modify the notebook, and show me the two expressions side by side." The second names a symptom, a constraint, and the observation that ends the task.</p></aside>
+</section>
 
+<section class="slide" id="slide-11" data-number="11" data-section="Practice" aria-label="Skills">
+  <p class="kicker">Reusable procedures</p>
+  <h2>Skills package reusable<br>instructions and checks.</h2>
+  <div class="skill-line">
+    <div class="skill-file">
+      <div class="file">SKILL.md</div>
+      <p>Focused instructions, with optional references and scripts.</p>
+    </div>
+    <div class="method">
+      <div class="method-row"><b>01</b><span>Recognize the right kind of task</span></div>
+      <div class="method-row"><b>02</b><span>Load the domain workflow</span></div>
+      <div class="method-row"><b>03</b><span>Apply the same verification discipline</span></div>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>Sources</p><p>https://code.claude.com/docs/en/skills</p></aside>
+</section>
 
+<section class="slide demo-slide" id="slide-12" data-number="12" data-section="Live demo 01" aria-label="Codebase onboarding demo">
+  <div class="demo-tag">Live demo 01 · codebase onboarding</div>
+  <h2>State the task and how<br>the result will be checked.</h2>
+  <p class="lede"><code>steady-2d-heat-inverse</code> infers a spatially varying conductivity from a forward heat equation, through an adjoint gradient and PETSc TAO.</p>
+  <div class="prompt-shell">
+    <div class="prompt-bar">
+      <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
+      <span class="prompt-path">claude · steady-2d-heat-inverse</span>
+    </div>
+    <div class="prompt-body">Onboard me to this repository as a research collaborator. Independently inspect the source, configuration, and tests; do not rely on prewritten agent notes. Explain the scientific objective; trace the forward → adjoint → optimization data flow; identify the main entry points and test strategy; and flag the first risks I should know about. Cite the files you used. Then create concise CLAUDE.md guidance. Do not modify scientific source code.</div>
+  </div>
+  <p class="handoff">Switch to the terminal →</p>
+  <aside class="speaker-notes"><p>Setup</p><p>What Claude Code receives: a clean copy of an unfamiliar repository. What we ask for: a working model backed by file evidence. Scale check: repeat the same map on jaxPTPolyPol.</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">Where to go next</div>
-<h1 class="sm">Resources.</h1>
-<div class="list">
-	<div class="row"><b>claude code</b><span><a href="https://code.claude.com/docs/en">code.claude.com/docs/en</a> — /skills · /hooks · /mcp · /sub-agents · /plugins</span></div>
-	<div class="row"><b>codex</b><span><a href=""https://developers.openai.com/codex>developers.openai.com/codex</a> — /skills · /mcp · /agents</span></div>
-	<div class="row"><b>workflows</b><span><a href="https://code.claude.com/docs/en/common-workflows">code.claude.com/docs/en/common-workflows</a> · <a href="https://code.claude.com/docs/en/best-practices">/best-practices</a></span></div>
-<div class="row"><b>build your own skills</b><span><a href="https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf">Anthropic Guide to Building Skill for Claude</a></span></div>
-</div></section>
+<section class="slide" id="slide-13" data-number="13" data-section="Live demo 01" aria-label="Codebase onboarding debrief">
+  <p class="kicker">Debrief · demo 01</p>
+  <h2>An onboarding summary connects<br>structure, tests, and risks.</h2>
+  <div class="debrief">
+    <div class="science-loop" aria-label="Heat inverse problem data flow">
+      <div class="line"><b>h(x,y)</b><span class="arrow">→</span>forward solve<span class="arrow">→</span><b>T</b></div>
+      <div class="line"><b>T − Tobs</b><span class="arrow">→</span>adjoint solve<span class="arrow">→</span><b>λ</b></div>
+      <div class="line"><b>∇T · ∇λ</b><span class="arrow">→</span>TAO update<span class="arrow">→</span><b>h′</b></div>
+    </div>
+    <div class="evidence-list">
+      <p><strong>ENTRY POINTS</strong><code>forward_solver.py</code>, <code>adjoint_solver.py</code>, <code>tao_solver.py</code></p>
+      <p><strong>TEST STRATEGY</strong>Finite difference, tangent-linear, and Taylor-remainder gradient checks.</p>
+      <p><strong>EARLY RISK</strong>The project installs flat modules: use <code>from forward_solver</code>, not a presumed <code>src</code> package.</p>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>Sources</p><p>codebase-onboarding_demo/steady-2d-heat-inverse/README.md; source modules; tests/test_grad_*.py</p><p>Scale check: the same evidence-first map applies to the larger jaxPTPolyPol research stack.</p></aside>
+</section>
 
+<section class="slide demo-slide" id="slide-14" data-number="14" data-section="Live demo 02" aria-label="Paper to Mathematica demo">
+  <div class="demo-tag">Live demo 02 · paper to Mathematica</div>
+  <h2>Derive, run, and<br>compare the result.</h2>
+  <p class="lede">Cov[P<sub>ℓ₁</sub>(k), P<sub>ℓ₂</sub>(k)] ∝ <span class="integral">∫<sub>−1</sub><sup>1</sup> dμ</span> 𝓛<sub>ℓ₁</sub>(μ) 𝓛<sub>ℓ₂</sub>(μ) [P<sub>g</sub>(k,μ) + 1/n<sub>g</sub>]<sup>2</sup></p>
+  <div class="prompt-shell">
+    <div class="prompt-bar">
+      <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
+      <span class="prompt-path">claude · paper-to-mathematica-nb_demo</span>
+    </div>
+    <div class="prompt-body">Treat the PDF as the source of truth; do not inspect existing solution artifacts before deriving. Reproduce Chudaykin–Ivanov (2019), p.45, Eqs. (B1)–(B2), and state the conventions. First create and run a Wolfram verification script that evaluates the exact μ integrals and prints MATCH or MISMATCH for all six independent entries. Only after six matches, compose a reviewer-friendly Mathematica notebook and report the validation command.</div>
+  </div>
+  <p class="handoff">Switch to the terminal →</p>
+  <aside class="speaker-notes"><p>Setup</p><p>Source: paper-to-mathematica-nb_demo/Chudaykin-Ivanov_2019.pdf, Appendix B, Eqs. (B1)–(B2).</p><p>Target: six independent entries for ℓ ∈ {0, 2, 4}. To match Eq. (B2), absorb 1/n_g into P_0.</p></aside>
+</section>
 
+<section class="slide" id="slide-15" data-number="15" data-section="Live demo 02" aria-label="Paper to Mathematica verification">
+  <p class="kicker">Debrief · demo 02</p>
+  <h2>The verification script checks<br>all six independent entries.</h2>
+  <div class="checks" aria-label="Six covariance verification results">
+    <div class="check"><span>C(0,0)</span><span>MATCH</span></div>
+    <div class="check"><span>C(0,2)</span><span>MATCH</span></div>
+    <div class="check"><span>C(0,4)</span><span>MATCH</span></div>
+    <div class="check"><span>C(2,2)</span><span>MATCH</span></div>
+    <div class="check"><span>C(2,4)</span><span>MATCH</span></div>
+    <div class="check"><span>C(4,4)</span><span>MATCH</span></div>
+  </div>
+  <aside class="speaker-notes"><p>Artifacts</p><p>PowerSpectrumMultipoleGaussianCovariance.nb · verify_power_spectrum_multipole_covariance.wls · symbolic comparison against Eq. (B2)</p></aside>
+  <aside class="speaker-notes"><p>Sources</p><p>paper-to-mathematica-nb_demo/verify_power_spectrum_multipole_covariance.wls; paper-to-mathematica-nb_demo/PowerSpectrumMultipoleGaussianCovariance.nb. Validation command: /Applications/Wolfram.app/Contents/MacOS/WolframKernel -script verify_power_spectrum_multipole_covariance.wls</p></aside>
+</section>
 
-<section class="slide"><div class="eyebrow">Now you</div>
-<h1 class="lg">Make it do one thing<br>you <s style="text-decoration-color:var(--coral);text-decoration-thickness:6px">didn't</s> think it could.</h1>
-<p class="sub">Write your profile. Pick a dare. One surprising result is the whole assignment.</p></section>
+<section class="slide" id="slide-16" data-number="16" data-section="Next move" aria-label="First week on-ramp">
+  <p class="kicker">Where to start</p>
+  <h2>Five things, in this order.</h2>
+  <div class="recipe">
+    <div class="recipe-row"><b>01</b><strong>Write it down</strong><span>One project instruction file. Conventions, build command, what not to touch.</span></div>
+    <div class="recipe-row"><b>02</b><strong>Set the boundary</strong><span>Decide what runs without asking, and what always stops for you.</span></div>
+    <div class="recipe-row"><b>03</b><strong>Run something read-only</strong><span>Onboard it to a repository you already know. Check its answer.</span></div>
+    <div class="recipe-row"><b>04</b><strong>Add a finish line</strong><span>Put a verification criterion in one real prompt this week.</span></div>
+    <div class="recipe-row"><b>05</b><strong>Package what worked</strong><span>When you repeat a prompt a third time, make it a skill.</span></div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>Three rungs, and most people should stay on the first two for a while: personal and project instruction files plus permissions; then installing and writing skills; then hooks, subagents, and MCP once a routine is stable enough to be worth automating.</p></aside>
+</section>
 
-<div id="counter"></div>
+<section class="slide" id="slide-17" data-number="17" data-section="Next move" aria-label="Closing and resources">
+  <p class="kicker">Resources</p>
+  <h2>Resources for your<br>first research task.</h2>
+  <div class="resource-list">
+    <div class="resource"><b>Claude Code</b><a href="https://code.claude.com/docs/en">code.claude.com/docs/en</a></div>
+    <div class="resource"><b>Project guidance</b><a href="https://code.claude.com/docs/en/memory">code.claude.com/docs/en/memory</a></div>
+    <div class="resource"><b>Skills</b><a href="https://code.claude.com/docs/en/skills">code.claude.com/docs/en/skills</a></div>
+  </div>
+  <aside class="speaker-notes"><p>Sources</p><p>Official Anthropic documentation links shown on slide.</p></aside>
+</section>
+
+<div id="notes-panel" data-notes-panel role="region" aria-label="Speaker notes">
+  <h4>Notes — press N to hide</h4>
+  <div id="notes-body"></div>
+</div>
+
 <script>
-const S=[...document.querySelectorAll('.slide')],bar=document.getElementById('bar'),
-counter=document.getElementById('counter');let i=0;
-function show(){S.forEach((s,j)=>s.classList.toggle('on',j===i));
+(function () {
+  "use strict";
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const progress = document.getElementById("progress");
+  const counter = document.getElementById("counter");
+  const sectionName = document.getElementById("section-name");
+  let index = 0;
+  let touchStartX = null;
+  const notesPanel = document.getElementById("notes-panel");
+  const notesBody = document.getElementById("notes-body");
 
-counter.textContent=String(i+1).padStart(2,'0')+' / '+S.length+'  ·  ← →';}
-function go(d){i=Math.max(0,Math.min(S.length-1,i+d));show();}
-addEventListener('keydown',e=>{if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();go(1);}
-if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(-1);}});
-addEventListener('click',e=>go(e.clientX>innerWidth/2?1:-1));
-show();
+  function renderNotes() {
+    const current = slides[index];
+    // A slide may carry more than one aside (sources plus artifacts). querySelector
+    // would silently render only the first and drop the rest.
+    const notes = current ? [...current.querySelectorAll(".speaker-notes")] : [];
+    notesBody.innerHTML = notes.length
+      ? notes.map((n) => n.innerHTML).join("")
+      : '<p class="empty">No notes for this slide.</p>';
+  }
+
+  function indexFromHash() {
+    const raw = window.location.hash.replace("#", "");
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) && parsed >= 1 && parsed <= slides.length ? parsed - 1 : 0;
+  }
+
+  function show(nextIndex, updateHash) {
+    index = Math.max(0, Math.min(slides.length - 1, nextIndex));
+    slides.forEach(function (slide, slideIndex) {
+      const active = slideIndex === index;
+      slide.classList.toggle("on", active);
+      slide.setAttribute("aria-hidden", active ? "false" : "true");
+    });
+    progress.style.width = (((index + 1) / slides.length) * 100) + "%";
+    counter.textContent = String(index + 1).padStart(2, "0") + " / " + slides.length + " · ← → · N notes";
+    sectionName.textContent = slides[index].dataset.section || "Orientation";
+    document.title = slides[index].getAttribute("aria-label") + " — Claude Code Orientation";
+    if (updateHash !== false && window.location.hash !== "#" + (index + 1)) {
+      history.replaceState(null, "", "#" + (index + 1));
+    }
+    if (notesPanel.classList.contains("open")) renderNotes();
+  }
+
+  function next() { show(index + 1, true); }
+  function previous() { show(index - 1, true); }
+
+  window.addEventListener("keydown", function (event) {
+    if (event.target.closest && event.target.closest("a, button, input, textarea, select")) return;
+    if (["ArrowRight", " ", "PageDown", "Enter"].includes(event.key)) {
+      event.preventDefault();
+      next();
+    } else if (["ArrowLeft", "PageUp", "Backspace"].includes(event.key)) {
+      event.preventDefault();
+      previous();
+    } else if (event.key === "n" || event.key === "N") {
+      event.preventDefault();
+      notesPanel.classList.toggle("open");
+      if (notesPanel.classList.contains("open")) renderNotes();
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      show(0, true);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      show(slides.length - 1, true);
+    }
+  });
+
+  window.addEventListener("click", function (event) {
+    if (event.target.closest("a")) return;
+    if (event.target.closest("#notes-panel")) return;
+    if (event.clientX >= window.innerWidth / 2) next();
+    else previous();
+  });
+
+  window.addEventListener("touchstart", function (event) {
+    touchStartX = event.changedTouches[0].clientX;
+  }, { passive: true });
+
+  window.addEventListener("touchend", function (event) {
+    if (touchStartX === null) return;
+    const delta = event.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) > 40) {
+      if (delta < 0) next();
+      else previous();
+    }
+    touchStartX = null;
+  }, { passive: true });
+
+  window.addEventListener("hashchange", function () {
+    show(indexFromHash(), false);
+  });
+
+  show(indexFromHash(), false);
+})();
 </script>
 </body>
 </html>
