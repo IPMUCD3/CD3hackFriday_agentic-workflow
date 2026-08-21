@@ -591,9 +591,22 @@ Run:
 cd slide_deck/checks && node terminology.mjs
 ```
 
-Expected: both decks `PASS`. The ICISE deck should report 0 hits. The kickoff deck should report 1 — the lone `AGENTS.md` label inside the "everything hangs off the loop" SVG, which Task 10 removes along with that slide. Task 5 deleted the other cross-tool copy.
+Expected: both decks `PASS`, exit code 0.
 
-If the kickoff deck exceeds 3, list the hits before continuing rather than raising the ceiling: the ceiling is the spec's requirement, not a tuning knob.
+- ICISE deck: **0** hits.
+- kickoff deck: **2** hits, against a ceiling of 3. Measured, not estimated — they are:
+
+```
+line  56: "The same mental model covers Claude Code and Codex."   (title-slide subtitle)
+line 105: "CLAUDE.md · AGENTS.md"                                 (label inside the map SVG)
+```
+
+Both disappear in Task 10: the map slide is cut from the spine entirely, and the title slide's
+subtitle is replaced by the translated Codex-deck lede, which names only one tool. The two hits
+that remain afterwards are the `AGENTS.md` pair in slide 7's bridge note — still under the ceiling.
+
+If the kickoff deck exceeds 3, list the hits before continuing rather than raising the ceiling:
+the ceiling is the spec's requirement, not a tuning knob.
 
 - [ ] **Step 3: Commit**
 
@@ -1058,6 +1071,25 @@ Every `<section class="slide">` carries `data-number` and `data-section`, and mo
 match (`slide-1` … `slide-17`), and set `data-section` per the spine: `Orientation` (1–2),
 `Mental model` (3–5), `Control` (6–9), `Practice` (10–11), `Live demo 01` (12–13),
 `Live demo 02` (14–15), `Next move` (16–17).
+
+- [ ] **Step 10b: Remove CSS rules orphaned by this restructure**
+
+Deleting slides and moving micro-copy into notes leaves selectors with nothing to match. Dead CSS
+here is worse than usual, because Task 10 clones this stylesheet wholesale into the other deck —
+an orphaned rule propagates rather than staying put.
+
+`.artifact-line` is already known to be orphaned: its only usage was replaced in Task 4. Remove
+its rule. Then check the same way for every class this task stopped using — at minimum
+`.bridge`, `.demo-context`, `.equation`, `.equation-note`, and `.stack-note` if step 5 removed
+its last user.
+
+For each candidate, confirm it is genuinely unused before deleting:
+
+```bash
+grep -c 'class="[^"]*bridge' slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
+```
+
+A count of `0` means the rule is safe to delete. Do not delete a rule that still has a user.
 
 - [ ] **Step 11: Verify the count**
 
