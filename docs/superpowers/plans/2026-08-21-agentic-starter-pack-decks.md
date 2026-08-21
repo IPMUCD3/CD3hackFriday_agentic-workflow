@@ -1163,10 +1163,24 @@ Run:
 cd slide_deck/checks && node overflow.mjs && node filenames.mjs && node terminology.mjs
 ```
 
-Expected: all three clean, exit code 0. The two merged demo slides and the three new slides
-are the likely sources of a clipping regression — if `overflow.mjs` reports one, shorten the
-offending copy rather than reducing the font size, since legibility is the whole point of
-the constraint.
+Expected: **all three clean, exit code 0.** For `overflow.mjs` specifically that is **12 PASS,
+`overflow: clean`** — 4 runs for the kickoff deck (no notes panel until Task 10) plus 8 for the
+ICISE deck (4 viewports × notes-closed and notes-open).
+
+This is measured, not predicted. The entire restructure in this task was built on a scratch copy
+and probed at all four viewports in both passes before this brief was written, and it came back
+clean — including 1280×620, where slide 11 currently fails. **This task is what turns
+`overflow.mjs` green.**
+
+Two things that validation settled, so you do not need to worry about them:
+
+- The merged demo slides (12 and 14) stack `.demo-tag` + `h2` + `.lede` + `.prompt-shell` +
+  `.handoff`, which is the tallest composition in the deck. They fit at 1280×620 with room to
+  spare. The contingency of dropping their `<h2>` is **not** needed.
+- Deleting the `SCALE CHECK` row is what clears the 28px overflow on the demo-01 debrief.
+
+If `overflow.mjs` reports anything at all, the restructure diverged from the validated one — stop
+and report rather than shortening copy, because the validated version fits.
 
 - [ ] **Step 13: Commit**
 
