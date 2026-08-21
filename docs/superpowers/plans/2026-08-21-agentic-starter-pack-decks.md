@@ -1556,30 +1556,55 @@ git commit -m "Add aggregate check runner and slide deck README"
 
 - [ ] **Step 1: Read every slide of both decks at 1440×810**
 
-Run:
+Create `slide_deck/checks/_shots.mjs` (temporary — delete it after this step; it is a review aid, not
+a check):
 
-```bash
-cd slide_deck/checks && node -e "
-import('playwright').then(async ({chromium}) => {
-  const { DECKS, fileUrl } = await import('./decks.mjs');
-  const b = await chromium.launch();
-  for (const d of DECKS) {
-    const p = await b.newPage({ viewport: { width: 1440, height: 810 } });
-    await p.goto(fileUrl(d.file));
-    const n = await p.evaluate(() => document.querySelectorAll('.slide').length);
-    for (let i = 0; i < n; i++) {
-      await p.evaluate((i) => { const s=[...document.querySelectorAll('.slide')]; s.forEach(x=>x.classList.remove('on')); s[i].classList.add('on'); }, i);
-      await p.screenshot({ path: \`/tmp/deck-\${d.file.slice(0,6)}-\${String(i+1).padStart(2,'0')}.png\` });
-    }
-    await p.close();
+```js
+import { chromium } from 'playwright';
+import { DECKS, fileUrl } from './decks.mjs';
+
+const OUT = process.argv[2];
+const browser = await chromium.launch();
+
+for (const deck of DECKS) {
+  const tag = deck.file.slice(0, 6);
+  const page = await browser.newPage({ viewport: { width: 1440, height: 810 } });
+  await page.goto(fileUrl(deck.file));
+  const n = await page.evaluate(() => document.querySelectorAll('.slide').length);
+  for (let i = 0; i < n; i++) {
+    if (i > 0) await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `${OUT}/deck-${tag}-${String(i + 1).padStart(2, '0')}.png` });
   }
-  await b.close();
-  console.log('screenshots written to /tmp');
-});
-"
+  await page.close();
+  console.log(`${deck.name}: ${n} slides captured`);
+}
+
+await browser.close();
 ```
 
-Expected: 34 PNGs in `/tmp`. Review them for wrapping, orphaned words, and uneven density. This catches what the automated probe cannot: text that fits but reads badly.
+Run it, writing into a scratch directory outside the repo:
+
+```bash
+mkdir -p /tmp/deck-shots && cd slide_deck/checks && node _shots.mjs /tmp/deck-shots && rm -f _shots.mjs
+```
+
+Expected: `kickoff (Claude Code): 17 slides captured`, `ICISE (Codex): 17 slides captured`, and 34
+PNGs in `/tmp/deck-shots`, none smaller than about 100KB.
+
+**Two details this script gets right that a naive version does not**, both learned the hard way:
+
+- It advances with `ArrowRight` rather than toggling `.on` classes directly, so the deck's own
+  `show()` runs and the notes panel stays in sync.
+- It waits 500ms before each capture. `.slide.on` carries a `rise` animation starting at
+  `opacity: 0`; screenshotting immediately after navigating captures **blank slides**, which look
+  like a catastrophic styling failure and are purely a timing artifact.
+
+If any PNG is under ~30KB, it is blank and the wait is too short — increase it rather than
+concluding the deck is broken.
+
+Review the 34 images for wrapping, orphaned words, and uneven density. This is what catches text
+that fits but reads badly, which no probe can see.
 
 - [ ] **Step 2: Confirm the register did not drift**
 
