@@ -461,6 +461,9 @@
     display: grid;
     gap: 18px;
   }
+  /* .method inherits its top spacing from .skill-line when nested. Used
+     standalone as a slide's main block it needs its own, matching .recipe. */
+  .slide > .method { margin-top: clamp(38px, 5.7vh, 56px); }
 
   .method-row {
     display: grid;
@@ -873,7 +876,7 @@
       <p>Boundaries are configuration, not good intentions. Set them first.</p>
     </div>
   </div>
-  <aside class="speaker-notes"><p>Notes</p><p>A fourth mode: work better done by hand. If you can write it faster than you can specify it, write it. The loop pays off when verification is cheaper than production.</p><p>Instruction files are context, not enforcement — the agent reads them and tries to comply, but nothing guarantees it. For a hard guarantee, use a hook or a deny rule.</p></aside>
+  <aside class="speaker-notes"><p>Notes</p><p>A fourth mode: work better done by hand. If you can write it faster than you can specify it, write it. The loop pays off when verification is cheaper than production.</p><p>Instruction files are context, not enforcement — the agent reads them and tries to comply, but nothing guarantees it. What actually constrains it is the sandbox and the approval policy — <code>sandbox_mode</code> and <code>approval_policy</code> decide what it may touch and when it must stop and ask.</p></aside>
 </section>
 
 <section class="slide" id="slide-9" data-number="09" data-section="Control" aria-label="Context and cost hygiene">
