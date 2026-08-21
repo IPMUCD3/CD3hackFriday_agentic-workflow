@@ -698,12 +698,39 @@ git commit -m "Add structural-parity check (currently failing)"
 
 ## Task 8: Add the notes layer to the ICISE deck
 
-The ICISE deck already carries `<aside class="speaker-notes">` markup and a `display: none` rule. This task turns that dead markup into a toggleable panel, which is what lets slides stay minimal while the background stays available.
+The ICISE deck already carries `<aside class="speaker-notes">` markup and a `display: none` rule.
+This task turns that dead markup into a toggleable panel, which is what lets slides stay minimal
+while the background stays available.
+
+**Every edit below has been executed against a scratch copy of this deck and verified.** The token
+names, the insertion anchors, and the expected output are measured, not predicted. Apply them
+verbatim.
 
 **Files:**
-- Modify: `slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html` (CSS block near line 742; the `<script>` block near line 1020)
+- Modify: `slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html`
 
-- [ ] **Step 1: Replace the hiding rule with panel styling**
+- [ ] **Step 1: Add the two panel tokens**
+
+This deck's accent token is `--green`; there is no `--accent`. Find the end of the `:root` block:
+
+```css
+    --pad-y: clamp(48px, 7.4vh, 78px);
+  }
+```
+
+Replace with:
+
+```css
+    --pad-y: clamp(48px, 7.4vh, 78px);
+    --panel: #0D0D0D;
+    --panel-fg: #C9C9C4;
+  }
+```
+
+Defining these as tokens rather than hardcoding colours is what lets Task 10 reskin the panel for
+the other deck by changing two values instead of editing the rule.
+
+- [ ] **Step 2: Add the panel styling**
 
 Find:
 
@@ -725,8 +752,8 @@ Replace with:
     overflow-y: auto;
     padding: 24px 28px 28px;
     background: var(--panel);
-    border-top: 1px solid var(--accent);
-    border-left: 1px solid var(--accent);
+    border-top: 1px solid var(--green);
+    border-left: 1px solid var(--green);
     z-index: 9;
     display: none;
   }
@@ -736,70 +763,102 @@ Replace with:
     font-size: 12px;
     letter-spacing: .16em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--green);
     margin-bottom: 12px;
   }
   #notes-panel p { font-size: 14.5px; line-height: 1.6; color: var(--panel-fg); margin-bottom: 10px; }
   #notes-panel p:last-child { margin-bottom: 0; }
-  #notes-panel .empty { color: #6E6E68; font-style: italic; }
+  #notes-panel .empty { color: var(--dim); font-style: italic; }
 ```
 
-Then add the two tokens this rule needs to the ICISE `:root` block, alongside the existing custom properties:
+`overflow-y: auto` with `max-height` is what satisfies the spec's requirement that the panel scroll
+rather than clip.
 
-```css
-    --panel:#0D0D0D; --panel-fg:#C9C9C4;
-```
+- [ ] **Step 3: Add the panel element**
 
-The `overflow-y: auto` and `max-height` are what satisfy the spec's requirement that the panel scroll rather than clip. Defining `--panel` and `--panel-fg` here rather than hardcoding colours is what lets Task 10 reskin the panel by changing two token values instead of editing the rule.
-
-- [ ] **Step 2: Add the panel element**
-
-Immediately before the closing `</section>` of the last slide — that is, directly before the `<script>` tag — insert:
+Find the opening `<script>` tag near the end of the file and insert the panel immediately before it:
 
 ```html
-<div id="notes-panel" data-notes-panel data-scrollable aria-live="polite">
+<div id="notes-panel" data-notes-panel aria-live="polite">
   <h4>Notes — press N to hide</h4>
   <div id="notes-body"></div>
 </div>
+
+<script>
 ```
 
-The `data-notes-panel` attribute is what the overflow check looks for to decide whether to run its
-notes-open pass at all.
+Note there is **no** `data-scrollable` attribute. An earlier draft called for one; the overflow
+check stopped using it when `probePanel` replaced the exemption-based approach, and `parity.mjs`
+now compares attribute names, so a dead attribute would have to be carried in both decks forever.
 
-- [ ] **Step 3: Wire up the N key**
+- [ ] **Step 4: Declare the panel references and the render function**
 
-In the `<script>` block, immediately before the final call that shows the first slide, insert:
+The deck's script is an IIFE. Find:
 
 ```js
-const notesPanel = document.getElementById('notes-panel');
-const notesBody = document.getElementById('notes-body');
+  let index = 0;
+  let touchStartX = null;
+```
 
-function renderNotes() {
-  const current = document.querySelector('.slide.on');
-  const notes = current ? current.querySelector('.speaker-notes') : null;
-  notesBody.innerHTML = notes
-    ? notes.innerHTML
-    : '<p class="empty">No notes for this slide.</p>';
-}
+Replace with:
 
-addEventListener('keydown', (e) => {
-  if (e.key === 'n' || e.key === 'N') {
-    e.preventDefault();
-    notesPanel.classList.toggle('open');
-    if (notesPanel.classList.contains('open')) renderNotes();
+```js
+  let index = 0;
+  let touchStartX = null;
+  const notesPanel = document.getElementById("notes-panel");
+  const notesBody = document.getElementById("notes-body");
+
+  function renderNotes() {
+    const current = slides[index];
+    const notes = current ? current.querySelector(".speaker-notes") : null;
+    notesBody.innerHTML = notes ? notes.innerHTML : '<p class="empty">No notes for this slide.</p>';
   }
-});
 ```
 
-- [ ] **Step 4: Keep the panel in sync when slides change**
+`renderNotes` reads `slides[index]` — the IIFE's own state — rather than querying for `.slide.on`.
+That keeps it correct regardless of how the active slide was set.
 
-Find the function that advances slides and applies the `on` class. At the end of that function, add:
+- [ ] **Step 5: Keep the panel in sync when the slide changes**
+
+Find the end of `show()`:
 
 ```js
-  if (notesPanel.classList.contains('open')) renderNotes();
+    if (updateHash !== false && window.location.hash !== "#" + (index + 1)) {
+      history.replaceState(null, "", "#" + (index + 1));
+    }
+  }
 ```
 
-- [ ] **Step 5: Verify the toggle works and nothing clips**
+Replace with:
+
+```js
+    if (updateHash !== false && window.location.hash !== "#" + (index + 1)) {
+      history.replaceState(null, "", "#" + (index + 1));
+    }
+    if (notesPanel.classList.contains("open")) renderNotes();
+  }
+```
+
+- [ ] **Step 6: Add the N key to the existing keydown handler**
+
+Add a branch to the existing `if`/`else if` chain rather than registering a second listener, so the
+panel inherits the handler's guard against firing inside links and form fields. Find:
+
+```js
+    } else if (event.key === "Home") {
+```
+
+Replace with:
+
+```js
+    } else if (event.key === "n" || event.key === "N") {
+      event.preventDefault();
+      notesPanel.classList.toggle("open");
+      if (notesPanel.classList.contains("open")) renderNotes();
+    } else if (event.key === "Home") {
+```
+
+- [ ] **Step 7: Verify the panel works and nothing clips**
 
 Run:
 
@@ -807,33 +866,26 @@ Run:
 cd slide_deck/checks && node overflow.mjs
 ```
 
-Expected: the ICISE deck now runs both a notes-closed and a notes-open pass at each of the four
-viewports (eight ICISE lines instead of four). The kickoff deck still runs four, because it has
-no notes panel until Task 10.
-
-Work the arithmetic through before you run it, because the known failure now fires **twice**:
+Expected: **10 PASS, 2 FAIL, `overflow: 2 finding(s)`, exit code 1.** Measured on a scratch copy of
+this exact change. The arithmetic:
 
 | Deck | Runs | Result |
 | --- | ---: | --- |
-| kickoff | 4 | 4 PASS (notes pass skipped — no panel) |
+| kickoff | 4 | 4 PASS (notes pass skipped — no panel until Task 10) |
 | ICISE | 8 | 6 PASS, **2 FAIL** — slide 11 @ 1280x620, once notes-closed and once notes-open |
 
-So the expected output is **10 PASS, 2 FAIL, `overflow: 2 finding(s)`, exit code 1**, and both
-findings must name slide 11 at 1280x620. Slide 11 overflows on its own; opening the panel does
-not cause it. The panel is not exempted from the probe — it is checked by `probePanel`, which
-asserts positively that the panel sits inside the viewport and scrolls its own overflow.
+Both findings must name slide 11 at 1280x620 with `slide-scrolls`. Slide 11 overflows on its own
+and Task 9 clears it; opening the panel does not cause it. A finding naming any other slide, or
+naming the panel itself, means this task regressed something — stop and report.
 
-A finding naming any other slide, or naming the panel itself, means this task regressed
-something — most likely the panel is clipping instead of scrolling. Stop and report rather than
-adjusting the expectation.
+- [ ] **Step 8: Prove the panel assertion can actually fail**
 
-- [ ] **Step 5b: Prove the panel assertion can actually fail**
+`probePanel` asserts the panel scrolls rather than clips. Scratch-copy measurement shows the
+tallest slide's notes fill exactly 100% of the panel box and never exceed it — so **today that
+assertion never fires**, and an assertion that never fires is indistinguishable from one that is
+broken. Prove it works, then revert.
 
-`probePanel` asserts that the panel scrolls rather than clips. If no slide's notes are ever tall
-enough to overflow the panel, that assertion is vacuous — it passes because it never fires, which
-is the same defect class this check was just fixed for. Verify it can fail, then revert.
-
-Temporarily change the `#notes-panel` rule so any content overflows a tiny box that cannot scroll:
+Temporarily change two properties in the `#notes-panel` rule:
 
 ```css
     max-height: 40px;
@@ -846,14 +898,15 @@ Run:
 cd slide_deck/checks && node overflow.mjs
 ```
 
-Expected: **new failures appear**, naming `notes-panel-clips-content` with a non-zero hidden-pixel
-count and `overflow-y: hidden`. If the output is unchanged, the assertion is not wired up — stop
-and report, because the check is not testing what it claims.
+Expected: **new findings of kind `notes-panel-clips-content`**, with a non-zero hidden-pixel count
+and `overflow-y: hidden` in the detail. If the output is unchanged at 10 PASS / 2 FAIL, the
+assertion is not wired up — stop and report, because the check is not testing what it claims.
 
-Then revert both properties to `max-height: 62vh` and `overflow-y: auto`, re-run, and confirm the
-output returns to 10 PASS / 2 FAIL. Do not commit the temporary values.
+Then restore `max-height: 62vh` and `overflow-y: auto`, re-run, and confirm the output returns to
+10 PASS / 2 FAIL. **Do not commit the temporary values** — verify with `git diff` before committing
+that neither `40px` nor `hidden` appears.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
