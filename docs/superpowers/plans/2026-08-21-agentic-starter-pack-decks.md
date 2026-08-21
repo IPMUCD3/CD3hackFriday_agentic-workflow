@@ -1226,10 +1226,15 @@ The ICISE CSS references design tokens by name. Define the kickoff equivalents i
     --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
     --pad-x: clamp(54px, 7.2vw, 112px);
     --pad-y: clamp(48px, 7.4vh, 78px);
-    --panel: #F3E8CF;
+    --panel: #F8F0DC;
     --panel-fg: #4A4740;
   }
 ```
+
+Note `--panel` is deliberately **not** equal to `--bg`. The notes panel floats above the slide, so
+it needs a surface of its own; a panel whose background matches the page reads as a hole rather
+than a layer. The ICISE deck lifts `--panel` to its `--surface` value for the same reason, and the
+panel carries a border on its three non-flush edges.
 
 Keep the ICISE token **names** exactly — every CSS rule references them, so renaming any one means
 editing the whole stylesheet. Only the values change. The names stay `--green` / `--green-soft`
