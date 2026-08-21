@@ -419,7 +419,19 @@ Run:
 cd slide_deck/checks && node overflow.mjs
 ```
 
-Expected: `overflow: clean`, exit code 0.
+Expected: **unchanged from the baseline** — 7 PASS, 1 FAIL, `overflow: 1 finding(s)`, exit code 1.
+
+The single failure must still be the known one and nothing else:
+
+```
+FAIL ICISE (Codex) @ 1280x620
+      {"slide":11,"kind":"slide-scrolls","detail":"28px"}
+```
+
+That defect is slide 11's, and Task 9 clears it. What this step is checking is that moving the
+artifact line into a `speaker-notes` aside (which is `display: none`) did not push anything off
+slide 15. If a SECOND finding appears, or the finding moves to a different slide, stop — this
+task caused a regression.
 
 - [ ] **Step 6: Commit**
 
