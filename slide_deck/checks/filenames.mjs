@@ -41,16 +41,24 @@ function walk(dir, out = new Set()) {
   return out;
 }
 
-// The demo repositories are nested, untracked git repos. On a fresh clone they
-// are absent, and a missing file then means "not checked out", not "wrong name".
-// Fail only when every demo directory is present; otherwise warn and pass.
-const absentDirs = Object.values(DEMO_DIRS).filter((d) => !existsSync(join(REPO, d)));
+// The demo repositories are nested, untracked git repos. On a fresh clone their
+// PARENT directory still exists -- `codebase-onboarding_demo` holds a tracked
+// README -- while the files the slides name do not. A directory-existence test
+// therefore never fires, and the check this repo's README tells people to run
+// fails red on a clean machine. Judge each demo by whether it actually CONTAINS
+// artifacts instead.
+const ARTIFACT_FILE = /\.(wls|nb|pdf|py)$/;
 const onDisk = {};
-for (const [label, dir] of Object.entries(DEMO_DIRS)) onDisk[label] = walk(join(REPO, dir));
+const populated = {};
+for (const [label, dir] of Object.entries(DEMO_DIRS)) {
+  onDisk[label] = walk(join(REPO, dir));
+  populated[label] = [...onDisk[label]].some((f) => ARTIFACT_FILE.test(f));
+}
 
-if (absentDirs.length) {
-  console.warn(`SKIP demo directories not checked out: ${absentDirs.join(', ')}`);
-  console.warn('     filename mismatches will be reported as warnings, not failures');
+const unpopulated = Object.entries(DEMO_DIRS).filter(([l]) => !populated[l]).map(([, d]) => d);
+if (unpopulated.length) {
+  console.warn(`SKIP demo content not checked out: ${unpopulated.join(', ')}`);
+  console.warn('     names from those demos are reported as warnings, not failures');
 }
 
 let failures = 0;
@@ -69,20 +77,21 @@ for (const deck of DECKS) {
   }
 
   let namedCount = 0;
-  const missing = [];
+  const hard = [];
+  const soft = [];
   for (const [label, names] of namedByLabel) {
     namedCount += names.size;
     for (const f of names) {
-      if (!onDisk[label].has(f)) missing.push(`${f} (expected in ${DEMO_DIRS[label]})`);
+      if (onDisk[label].has(f)) continue;
+      (populated[label] ? hard : soft).push(`${f} (expected in ${DEMO_DIRS[label]})`);
     }
   }
 
-  if (missing.length && absentDirs.length) {
-    console.warn(`WARN ${deck.name}: unverifiable -> ${missing.join(', ')}`);
-  } else if (missing.length) {
-    failures += missing.length;
-    console.error(`FAIL ${deck.name}: named on a slide but not on disk -> ${missing.join(', ')}`);
-  } else {
+  if (soft.length) console.warn(`WARN ${deck.name}: unverifiable -> ${soft.join(', ')}`);
+  if (hard.length) {
+    failures += hard.length;
+    console.error(`FAIL ${deck.name}: named on a demo slide but not in its demo directory -> ${hard.join(', ')}`);
+  } else if (!soft.length) {
     console.log(`PASS ${deck.name}: all ${namedCount} named artifact(s) exist`);
   }
 }
