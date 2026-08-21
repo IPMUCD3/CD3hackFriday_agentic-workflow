@@ -1,0 +1,1098 @@
+# Agentic Starter-Pack Decks Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Revise both slide decks in `slide_deck/` in place into a matched pair of 17-slide starter packs for students and junior researchers, with a scripted check harness that makes "all texts visible" and "mirror twins" verifiable properties rather than claims.
+
+**Architecture:** Both decks stay single-file, dependency-free, offline-capable HTML. A separate `slide_deck/checks/` directory holds a Playwright-based harness — four checks — which is the only place any dependency lives. Checks are written *before* the fixes they guard, so each fix has a failing check to turn green. The ICISE deck is restructured first because it is already closest to the target spine; the kickoff deck is then rewritten to structural parity with it.
+
+**Tech Stack:** HTML5, CSS custom properties, vanilla JS (decks); Node 25 + Playwright (checks only).
+
+**Read first:** `docs/superpowers/specs/2026-08-21-agentic-starter-pack-decks-design.md`. It carries the 17-slide spine, the terminology mapping table, and the verified corrections list. This plan implements that spec and does not restate its rationale.
+
+---
+
+## File Structure
+
+| File | Responsibility |
+| --- | --- |
+| `slide_deck/kickoff_overview_2026June12.html` | Claude Code deck. Revised in place. |
+| `slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html` | Codex deck. Revised in place. |
+| `slide_deck/checks/package.json` | Pins Playwright. Checks-only; decks never import it. |
+| `slide_deck/checks/overflow.mjs` | Check 1 — no element escapes the viewport, at four sizes, notes closed and open. |
+| `slide_deck/checks/parity.mjs` | Check 2 — both decks share one structural signature. |
+| `slide_deck/checks/terminology.mjs` | Check 3 — no cross-tool terminology leakage. |
+| `slide_deck/checks/filenames.mjs` | Check 4 — every filename printed on a demo slide exists on disk. |
+| `slide_deck/checks/run-all.mjs` | Runs all four, exits non-zero on any failure. |
+| `slide_deck/README.md` | How to run the checks. |
+
+Each check is a separate file with one responsibility and its own exit code, so a failure names itself without a test runner.
+
+---
+
+## Task 1: Scaffold the check harness
+
+**Files:**
+- Create: `slide_deck/checks/package.json`
+- Create: `slide_deck/checks/.gitignore`
+
+- [ ] **Step 1: Create the package manifest**
+
+Create `slide_deck/checks/package.json`:
+
+```json
+{
+  "name": "slide-deck-checks",
+  "private": true,
+  "type": "module",
+  "description": "Verification harness for the agentic workflow slide decks",
+  "scripts": {
+    "check": "node run-all.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
+```
+
+- [ ] **Step 2: Ignore installed modules**
+
+Create `slide_deck/checks/.gitignore`:
+
+```gitignore
+node_modules/
+```
+
+- [ ] **Step 3: Install Playwright and its browser**
+
+Run:
+
+```bash
+cd slide_deck/checks && npm install && npx playwright install chromium
+```
+
+Expected: `npm install` reports added packages with no `ERR!` lines; `playwright install chromium` ends with a downloaded-browser message or reports the browser is already installed.
+
+- [ ] **Step 4: Verify the browser actually launches**
+
+Run:
+
+```bash
+cd slide_deck/checks && node -e "import('playwright').then(async ({chromium}) => { const b = await chromium.launch(); console.log('launch ok', await b.version()); await b.close(); })"
+```
+
+Expected: prints `launch ok` followed by a Chromium version string.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add slide_deck/checks/package.json slide_deck/checks/package-lock.json slide_deck/checks/.gitignore
+git commit -m "Add slide-deck check harness scaffold"
+```
+
+---
+
+## Task 2: Overflow check (the "all texts visible" guard)
+
+This check must pass **before** any deck edits — it is the regression guard, and the decks are currently clean. Establishing it green first is what makes a later red meaningful.
+
+**Files:**
+- Create: `slide_deck/checks/decks.mjs`
+- Create: `slide_deck/checks/overflow.mjs`
+
+- [ ] **Step 1: Create the shared deck list**
+
+Create `slide_deck/checks/decks.mjs`:
+
+```js
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const here = dirname(fileURLToPath(import.meta.url));
+export const DECK_DIR = join(here, '..');
+
+export const DECKS = [
+  { name: 'kickoff (Claude Code)', file: 'kickoff_overview_2026June12.html' },
+  { name: 'ICISE (Codex)', file: 'AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html' },
+];
+
+export const fileUrl = (f) => 'file://' + join(DECK_DIR, f);
+```
+
+- [ ] **Step 2: Write the overflow check**
+
+Create `slide_deck/checks/overflow.mjs`:
+
+```js
+import { chromium } from 'playwright';
+import { DECKS, fileUrl } from './decks.mjs';
+
+const VIEWPORTS = [
+  { width: 1440, height: 810 },
+  { width: 1280, height: 720 },
+  { width: 1024, height: 768 },
+  { width: 1280, height: 620 },
+];
+
+// Runs in the page. Activates each slide in turn and reports anything that
+// escapes the viewport. Checks r.top < 0 as well as scrollHeight because the
+// slides are flex-centred, so overflow escapes upward too and scrollHeight
+// only ever measures downward overflow.
+function probe(notesOpen) {
+  const slides = [...document.querySelectorAll('.slide')];
+  const VW = window.innerWidth;
+  const VH = window.innerHeight;
+  const findings = [];
+
+  slides.forEach((slide, i) => {
+    slides.forEach((s) => s.classList.remove('on'));
+    slide.classList.add('on');
+    slide.getBoundingClientRect();
+
+    if (slide.scrollHeight - slide.clientHeight > 1) {
+      findings.push({ slide: i + 1, kind: 'slide-scrolls', detail: `${slide.scrollHeight - slide.clientHeight}px` });
+    }
+
+    slide.querySelectorAll('*').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      // A panel that scrolls its own content is allowed to exceed its box.
+      if (el.closest('[data-scrollable]')) return;
+      if (r.bottom > VH + 1 || r.top < -1 || r.right > VW + 1 || r.left < -1) {
+        findings.push({
+          slide: i + 1,
+          kind: 'clipped',
+          notesOpen,
+          el: el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).trim().split(/\s+/)[0] : ''),
+          box: { top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right) },
+          text: (el.textContent || '').trim().slice(0, 60),
+        });
+      }
+    });
+  });
+
+  return findings;
+}
+
+const browser = await chromium.launch();
+let failures = 0;
+
+for (const deck of DECKS) {
+  for (const viewport of VIEWPORTS) {
+    const page = await browser.newPage({ viewport });
+    await page.goto(fileUrl(deck.file));
+
+    for (const notesOpen of [false, true]) {
+      if (notesOpen) {
+        await page.keyboard.press('n');
+        const hasPanel = await page.evaluate(() => !!document.querySelector('[data-notes-panel]'));
+        if (!hasPanel) continue; // deck has no notes layer yet
+      }
+      const findings = await page.evaluate(probe, notesOpen);
+      const label = `${deck.name} @ ${viewport.width}x${viewport.height}${notesOpen ? ' (notes open)' : ''}`;
+      if (findings.length) {
+        failures += findings.length;
+        console.error(`FAIL ${label}`);
+        for (const f of findings.slice(0, 6)) console.error('     ', JSON.stringify(f));
+      } else {
+        console.log(`PASS ${label}`);
+      }
+      if (notesOpen) await page.keyboard.press('n');
+    }
+
+    await page.close();
+  }
+}
+
+await browser.close();
+console.log(failures ? `\noverflow: ${failures} finding(s)` : '\noverflow: clean');
+process.exit(failures ? 1 : 0);
+```
+
+- [ ] **Step 3: Run it against the unmodified decks**
+
+Run:
+
+```bash
+cd slide_deck/checks && node overflow.mjs
+```
+
+Expected: eight `PASS` lines (2 decks × 4 viewports; the notes pass is skipped because neither deck has a notes panel yet), then `overflow: clean`, exit code 0.
+
+If this reports failures, stop — the baseline assumption in the spec is wrong and the spec needs revisiting before any edit.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add slide_deck/checks/decks.mjs slide_deck/checks/overflow.mjs
+git commit -m "Add slide overflow check"
+```
+
+---
+
+## Task 3: Filename check — write it and watch it fail
+
+**Files:**
+- Create: `slide_deck/checks/filenames.mjs`
+
+- [ ] **Step 1: Write the check**
+
+Create `slide_deck/checks/filenames.mjs`:
+
+```js
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { DECKS, DECK_DIR } from './decks.mjs';
+
+const REPO = join(DECK_DIR, '..');
+const DEMO_DIRS = ['codebase-onboarding_demo', 'paper-to-mathematica-nb_demo'];
+
+// Only artifact extensions. Config filenames (CLAUDE.md, AGENTS.md, SKILL.md,
+// settings.json, config.toml) name conventions, not files that must exist here.
+const ARTIFACT = /\b[A-Za-z0-9_][A-Za-z0-9_.-]*\.(wls|nb|pdf|py)\b/g;
+const IGNORE = new Set(['setup.py', '__init__.py']);
+
+function walk(dir, out = new Set()) {
+  if (!existsSync(dir)) return out;
+  for (const entry of readdirSync(dir)) {
+    if (entry === '.git' || entry === 'node_modules') continue;
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) walk(full, out);
+    else out.add(entry);
+  }
+  return out;
+}
+
+const onDisk = new Set();
+for (const d of DEMO_DIRS) for (const f of walk(join(REPO, d))) onDisk.add(f);
+
+let failures = 0;
+for (const deck of DECKS) {
+  const html = readFileSync(join(DECK_DIR, deck.file), 'utf8');
+  const named = new Set((html.match(ARTIFACT) || []).filter((f) => !IGNORE.has(f)));
+  const missing = [...named].filter((f) => !onDisk.has(f));
+  if (missing.length) {
+    failures += missing.length;
+    console.error(`FAIL ${deck.name}: named on a slide but not on disk -> ${missing.join(', ')}`);
+  } else {
+    console.log(`PASS ${deck.name}: all ${named.size} named artifact(s) exist`);
+  }
+}
+
+console.log(failures ? `\nfilenames: ${failures} missing` : '\nfilenames: clean');
+process.exit(failures ? 1 : 0);
+```
+
+- [ ] **Step 2: Run it and confirm it fails on the known defect**
+
+Run:
+
+```bash
+cd slide_deck/checks && node filenames.mjs
+```
+
+Expected: **FAIL** for the ICISE deck naming `verify_B1_B2.wls` and `gaussian_covariance_B1_B2.nb`, exit code 1. This is the spec's correction #2 reproducing itself.
+
+- [ ] **Step 3: Commit the failing check**
+
+```bash
+git add slide_deck/checks/filenames.mjs
+git commit -m "Add demo-artifact filename check (currently failing)"
+```
+
+---
+
+## Task 4: Fix the wrong Mathematica filenames
+
+**Files:**
+- Modify: `slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html` (slide 15, `.artifact-line` and its `speaker-notes`)
+
+- [ ] **Step 1: Confirm the real filenames**
+
+Run:
+
+```bash
+ls paper-to-mathematica-nb_demo/
+```
+
+Expected output includes exactly:
+
+```
+PowerSpectrumMultipoleGaussianCovariance.nb
+verify_power_spectrum_multipole_covariance.wls
+```
+
+- [ ] **Step 2: Replace the artifact line**
+
+In `slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html`, find:
+
+```html
+  <p class="artifact-line">gaussian_covariance_B1_B2.nb · WolframKernel -script verify_B1_B2.wls · symbolic comparison against Eq. (B2)</p>
+```
+
+Replace with:
+
+```html
+  <aside class="speaker-notes"><p>Artifacts</p><p>PowerSpectrumMultipoleGaussianCovariance.nb · verify_power_spectrum_multipole_covariance.wls · symbolic comparison against Eq. (B2)</p></aside>
+```
+
+This both corrects the names and executes the spec's removal of `.artifact-line` micro-copy from the slide face.
+
+- [ ] **Step 3: Replace the stale names in the existing speaker note**
+
+Find:
+
+```html
+  <aside class="speaker-notes"><p>[Sources]</p><p>paper-to-mathematica-nb_demo/verify_B1_B2.wls; paper-to-mathematica-nb_demo/gaussian_covariance_B1_B2.nb. Verified with /Applications/Wolfram.app/Contents/MacOS/WolframKernel -script.</p></aside>
+```
+
+Replace with:
+
+```html
+  <aside class="speaker-notes"><p>Sources</p><p>paper-to-mathematica-nb_demo/verify_power_spectrum_multipole_covariance.wls; paper-to-mathematica-nb_demo/PowerSpectrumMultipoleGaussianCovariance.nb. Validation command: /Applications/Wolfram.app/Contents/MacOS/WolframKernel -script verify_power_spectrum_multipole_covariance.wls</p></aside>
+```
+
+- [ ] **Step 4: Re-run the check**
+
+Run:
+
+```bash
+cd slide_deck/checks && node filenames.mjs
+```
+
+Expected: two `PASS` lines and `filenames: clean`, exit code 0.
+
+- [ ] **Step 5: Confirm no text was pushed off-slide**
+
+Run:
+
+```bash
+cd slide_deck/checks && node overflow.mjs
+```
+
+Expected: `overflow: clean`, exit code 0.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
+git commit -m "Correct Mathematica artifact filenames on demo-02 debrief"
+```
+
+---
+
+## Task 5: Fix the malformed anchor and the factual precedence error
+
+Both defects live in the kickoff deck and are one-line edits with no layout consequence. Grouping them keeps the commit coherent.
+
+**Files:**
+- Modify: `slide_deck/kickoff_overview_2026June12.html`
+
+- [ ] **Step 1: Repair the broken anchor**
+
+Find (note the doubled quote after `href=` and the missing closing quote):
+
+```html
+	<div class="row"><b>codex</b><span><a href=""https://developers.openai.com/codex>developers.openai.com/codex</a> — /skills · /mcp · /agents</span></div>
+```
+
+Replace with:
+
+```html
+	<div class="row"><b>codex</b><span><a href="https://developers.openai.com/codex">developers.openai.com/codex</a> — the companion deck covers this in Codex terms</span></div>
+```
+
+- [ ] **Step 2: Fix the precedence claim**
+
+Find:
+
+```html
+<div class="note">MORE SPECIFIC WINS · PERMISSIONS MERGE: DENY → ASK → ALLOW</div>
+```
+
+Replace with:
+
+```html
+<div class="note">INSTRUCTIONS CONCATENATE — CLOSEST READ LAST · PERMISSIONS: DENY → ASK → ALLOW, FIRST MATCH WINS</div>
+```
+
+Why this matters: CLAUDE.md files do not override one another — every discovered file is concatenated, ordered from the filesystem root down, so the file closest to your working directory is read last. And permission rules are evaluated deny, then ask, then allow, with **specificity explicitly irrelevant**: a broad `Bash(aws *)` deny blocks a narrower `Bash(aws s3 ls)` allow. The old wording taught both of these backwards.
+
+- [ ] **Step 3: Remove the cross-tool micro-copy line**
+
+Find:
+
+```html
+<div class="note" style="color:var(--muted)">CODEX: SAME LADDER, DIFFERENT NAMES — AGENTS.md (GLOBAL &amp; ./) · ~/.codex/config.toml</div>
+```
+
+Delete this line entirely. The equivalent fact moves to the notes layer in Task 9.
+
+- [ ] **Step 4: Verify every anchor is now well-formed**
+
+Run:
+
+```bash
+grep -o 'href="[^"]*"' slide_deck/kickoff_overview_2026June12.html
+```
+
+Expected: one clean `href="https://..."` per line, no doubled quotes, no unterminated values. Count should be 6.
+
+- [ ] **Step 5: Verify all links still resolve**
+
+Run:
+
+```bash
+grep -o 'href="https://[^"]*"' slide_deck/kickoff_overview_2026June12.html \
+  | sed 's/href="//; s/"$//' \
+  | while read -r u; do printf '%s %s\n' "$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 20 "$u")" "$u"; done
+```
+
+Expected: every line begins with `200`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add slide_deck/kickoff_overview_2026June12.html
+git commit -m "Fix malformed anchor and correct precedence claim in kickoff deck"
+```
+
+---
+
+## Task 6: Terminology check
+
+**Files:**
+- Create: `slide_deck/checks/terminology.mjs`
+
+- [ ] **Step 1: Write the check**
+
+Create `slide_deck/checks/terminology.mjs`:
+
+```js
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { DECK_DIR } from './decks.mjs';
+
+// The Codex deck must carry no Claude terminology at all.
+// The kickoff deck is allowed exactly one deliberate Codex mention: the
+// cross-tool bridge on the instruction-file slide. More than one is leakage.
+const RULES = [
+  {
+    file: 'AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html',
+    label: 'ICISE (Codex)',
+    pattern: /claude|anthropic/gi,
+    maxHits: 0,
+  },
+  {
+    file: 'kickoff_overview_2026June12.html',
+    label: 'kickoff (Claude Code)',
+    pattern: /\bcodex\b|AGENTS\.md|\.codex/gi,
+    maxHits: 4,
+  },
+];
+
+let failures = 0;
+for (const rule of RULES) {
+  const html = readFileSync(join(DECK_DIR, rule.file), 'utf8');
+  const hits = html.match(rule.pattern) || [];
+  if (hits.length > rule.maxHits) {
+    failures++;
+    console.error(`FAIL ${rule.label}: ${hits.length} hit(s), max ${rule.maxHits} -> ${[...new Set(hits)].join(', ')}`);
+  } else {
+    console.log(`PASS ${rule.label}: ${hits.length}/${rule.maxHits} allowed hit(s)`);
+  }
+}
+
+console.log(failures ? `\nterminology: ${failures} rule(s) violated` : '\nterminology: clean');
+process.exit(failures ? 1 : 0);
+```
+
+- [ ] **Step 2: Run it and record the baseline**
+
+Run:
+
+```bash
+cd slide_deck/checks && node terminology.mjs
+```
+
+Expected: `PASS` for the ICISE deck (0 hits). The kickoff deck should now be at or under 4 hits following Task 5 step 3. If it exceeds 4, list the hits and remove the surplus cross-tool copy before continuing — the allowance is for the single bridge mention only.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add slide_deck/checks/terminology.mjs
+git commit -m "Add cross-tool terminology check"
+```
+
+---
+
+## Task 7: Structural-parity check — write it and watch it fail
+
+**Files:**
+- Create: `slide_deck/checks/parity.mjs`
+
+- [ ] **Step 1: Write the check**
+
+Create `slide_deck/checks/parity.mjs`:
+
+```js
+import { chromium } from 'playwright';
+import { DECKS, fileUrl } from './decks.mjs';
+
+// The structural signature is the tag/class tree with all text stripped.
+// Two mirror-twin decks must produce byte-identical signatures; only the
+// :root token block, font declarations, <title>, and text content may differ,
+// none of which appear here.
+function signature() {
+  const lines = [];
+  const walk = (el, depth) => {
+    const cls = String(el.className || '').trim().split(/\s+/).filter(Boolean).sort().join('.');
+    lines.push('  '.repeat(depth) + el.tagName.toLowerCase() + (cls ? '.' + cls : ''));
+    [...el.children].forEach((c) => walk(c, depth + 1));
+  };
+  [...document.body.children].forEach((c) => walk(c, 0));
+  return lines;
+}
+
+const browser = await chromium.launch();
+const sigs = [];
+
+for (const deck of DECKS) {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 810 } });
+  await page.goto(fileUrl(deck.file));
+  sigs.push({ name: deck.name, lines: await page.evaluate(signature) });
+  await page.close();
+}
+
+await browser.close();
+
+const [a, b] = sigs;
+const max = Math.max(a.lines.length, b.lines.length);
+const diffs = [];
+for (let i = 0; i < max; i++) {
+  if (a.lines[i] !== b.lines[i]) diffs.push({ line: i + 1, a: a.lines[i] ?? '(none)', b: b.lines[i] ?? '(none)' });
+}
+
+if (diffs.length) {
+  console.error(`FAIL structural parity: ${diffs.length} differing node(s)`);
+  console.error(`     ${a.name}: ${a.lines.length} nodes | ${b.name}: ${b.lines.length} nodes`);
+  for (const d of diffs.slice(0, 10)) {
+    console.error(`     line ${d.line}\n       ${a.name}: ${d.a}\n       ${b.name}: ${d.b}`);
+  }
+  process.exit(1);
+}
+
+console.log(`PASS structural parity: ${a.lines.length} nodes identical in both decks`);
+process.exit(0);
+```
+
+- [ ] **Step 2: Run it and confirm it fails**
+
+Run:
+
+```bash
+cd slide_deck/checks && node parity.mjs
+```
+
+Expected: **FAIL**, reporting a large node-count mismatch — the decks currently have 12 and 17 slides with entirely different internal markup. Exit code 1. This check turns green only at the end of Task 11.
+
+- [ ] **Step 3: Commit the failing check**
+
+```bash
+git add slide_deck/checks/parity.mjs
+git commit -m "Add structural-parity check (currently failing)"
+```
+
+---
+
+## Task 8: Add the notes layer to the ICISE deck
+
+The ICISE deck already carries `<aside class="speaker-notes">` markup and a `display: none` rule. This task turns that dead markup into a toggleable panel, which is what lets slides stay minimal while the background stays available.
+
+**Files:**
+- Modify: `slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html` (CSS block near line 742; the `<script>` block near line 1020)
+
+- [ ] **Step 1: Replace the hiding rule with panel styling**
+
+Find:
+
+```css
+  .speaker-notes { display: none; }
+```
+
+Replace with:
+
+```css
+  .speaker-notes { display: none; }
+
+  #notes-panel {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    width: min(420px, 38vw);
+    max-height: 62vh;
+    overflow-y: auto;
+    padding: 24px 28px 28px;
+    background: rgba(13, 13, 13, .97);
+    border-top: 1px solid var(--accent);
+    border-left: 1px solid var(--accent);
+    z-index: 9;
+    display: none;
+  }
+  #notes-panel.open { display: block; }
+  #notes-panel h4 {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  #notes-panel p { font-size: 14.5px; line-height: 1.6; color: #C9C9C4; margin-bottom: 10px; }
+  #notes-panel p:last-child { margin-bottom: 0; }
+  #notes-panel .empty { color: #6E6E68; font-style: italic; }
+```
+
+The `overflow-y: auto` and `max-height` are what satisfy the spec's requirement that the panel scroll rather than clip.
+
+- [ ] **Step 2: Add the panel element**
+
+Immediately before the closing `</section>` of the last slide — that is, directly before the `<script>` tag — insert:
+
+```html
+<div id="notes-panel" data-notes-panel data-scrollable aria-live="polite">
+  <h4>Notes — press N to hide</h4>
+  <div id="notes-body"></div>
+</div>
+```
+
+The `data-scrollable` attribute is what the overflow check reads to permit a deliberately scrolling container.
+
+- [ ] **Step 3: Wire up the N key**
+
+In the `<script>` block, immediately before the final call that shows the first slide, insert:
+
+```js
+const notesPanel = document.getElementById('notes-panel');
+const notesBody = document.getElementById('notes-body');
+
+function renderNotes() {
+  const current = document.querySelector('.slide.on');
+  const notes = current ? current.querySelector('.speaker-notes') : null;
+  notesBody.innerHTML = notes
+    ? notes.innerHTML
+    : '<p class="empty">No notes for this slide.</p>';
+}
+
+addEventListener('keydown', (e) => {
+  if (e.key === 'n' || e.key === 'N') {
+    e.preventDefault();
+    notesPanel.classList.toggle('open');
+    if (notesPanel.classList.contains('open')) renderNotes();
+  }
+});
+```
+
+- [ ] **Step 4: Keep the panel in sync when slides change**
+
+Find the function that advances slides and applies the `on` class. At the end of that function, add:
+
+```js
+  if (notesPanel.classList.contains('open')) renderNotes();
+```
+
+- [ ] **Step 5: Verify the toggle works and nothing clips**
+
+Run:
+
+```bash
+cd slide_deck/checks && node overflow.mjs
+```
+
+Expected: the ICISE deck now runs both a notes-closed and a notes-open pass at each of the four viewports (eight ICISE lines instead of four), all `PASS`, and `overflow: clean`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
+git commit -m "Add toggleable notes panel to Codex deck"
+```
+
+---
+
+## Task 9: Restructure the ICISE deck to the 17-slide spine
+
+This is the content task. Work slide by slide against the spine table in the spec. The ICISE deck is at 17 slides already, so this is a substitution, not a net addition: the Bridge slide and one demo-framing slide give up their positions to the two new ★ slides.
+
+**Files:**
+- Modify: `slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html`
+
+- [ ] **Step 1: Delete the Bridge slide**
+
+Remove the entire `<section>` with `id="slide-12"` (the `data-section="Bridge"` slide, whose body is only the `.bridge` paragraph). It carries no concept the surrounding slides do not already establish.
+
+- [ ] **Step 2: Move the demo-01 aside off the slide face**
+
+On slide 11, find and delete this row from the `.evidence-list`:
+
+```html
+      <p><strong>SCALE CHECK</strong>The same evidence-first map applies to the larger <code>jaxPTPolyPol</code> research stack.</p>
+```
+
+Then extend that slide's existing `<aside class="speaker-notes">` with the fact it was carrying:
+
+```html
+  <aside class="speaker-notes"><p>Sources</p><p>codebase-onboarding_demo/steady-2d-heat-inverse/README.md; source modules; tests/test_grad_*.py</p><p>Scale check: the same evidence-first map applies to the larger jaxPTPolyPol research stack.</p></aside>
+```
+
+Removing this row also closes the empty bottom-left quadrant noted in the spec, because the remaining three rows balance the science-loop column.
+
+- [ ] **Step 3: Move the remaining micro-copy into notes**
+
+Delete each of these from its slide face, appending the same text to that slide's `speaker-notes` aside:
+
+| Slide | Delete this element |
+| --- | --- |
+| 6 | `<p class="stack-note">User defaults · ~/.codex/config.toml &nbsp;&nbsp; Project overrides · .codex/config.toml for trusted projects</p>` |
+| 7 | `<p class="stack-note">Codex reads from the project root toward the working directory · closer guidance is applied later</p>` |
+| 13 | `<p class="equation-note">Target: six independent entries for ℓ ∈ {0, 2, 4}. To match Eq. (B2), absorb 1/n<sub>g</sub> into P<sub>0</sub>.</p>` |
+
+Exception: slide 7's sentence is the one statement that is true of **both** tools and is load-bearing for the teaching. Keep it on the slide face, but reword it to the tool-neutral form so the kickoff deck can carry the identical sentence:
+
+```html
+    <p class="stack-note">Instruction files concatenate from the project root down toward where you are working — the closest guidance is read last.</p>
+```
+
+- [ ] **Step 4: Add slide 8 — Failure modes**
+
+Insert a new `<section>` after the skills slide, matching the surrounding markup conventions:
+
+```html
+<section class="slide" data-number="08" data-section="Control" aria-label="Failure modes">
+  <p class="kicker">What goes wrong</p>
+  <h2>Four failure modes worth<br>recognizing early.</h2>
+  <div class="three-col">
+    <div class="principle">
+      <span class="n">01 · PLAUSIBLE</span>
+      <h3>Confident and wrong</h3>
+      <p>Fluent output is not evidence. An unverified result is a hypothesis.</p>
+    </div>
+    <div class="principle">
+      <span class="n">02 · DRIFT</span>
+      <h3>Silent scope creep</h3>
+      <p>A small request grows extra edits. Read the diff, not the summary.</p>
+    </div>
+    <div class="principle">
+      <span class="n">03 · REACH</span>
+      <h3>Edits you did not sanction</h3>
+      <p>Boundaries are configuration, not good intentions. Set them first.</p>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>A fourth mode: work better done by hand. If you can write it faster than you can specify it, write it. The loop pays off when verification is cheaper than production.</p><p>Instruction files are context, not enforcement — the agent reads them and tries to comply, but nothing guarantees it. For a hard guarantee, use a hook or a deny rule.</p></aside>
+</section>
+```
+
+- [ ] **Step 5: Add slide 9 — Context and cost hygiene**
+
+Insert immediately after slide 8:
+
+```html
+<section class="slide" data-number="09" data-section="Control" aria-label="Context and cost hygiene">
+  <p class="kicker">Session hygiene</p>
+  <h2>A session has a working<br>memory, and it fills up.</h2>
+  <div class="method">
+    <div class="method-row"><b>01</b><span>Scope the working set — point at the files that matter, not the whole tree</span></div>
+    <div class="method-row"><b>02</b><span>Start fresh when the task changes — a long session carries its whole history</span></div>
+    <div class="method-row"><b>03</b><span>Prefer one verified step to five unverified ones</span></div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>Everything the session has read stays in context and is re-sent with each turn, so a long session is both slower and more expensive than a short one. Quality degrades too: relevant detail competes with everything read earlier.</p><p>Practical rule — one task per session. When you find yourself re-explaining what the session already did, start a new one and give it the conclusion rather than the history.</p></aside>
+</section>
+```
+
+- [ ] **Step 6: Add slide 16 — Your first week**
+
+Insert immediately before the resources slide:
+
+```html
+<section class="slide" data-number="16" data-section="Next move" aria-label="First week on-ramp">
+  <p class="kicker">Where to start</p>
+  <h2>Five things, in this order.</h2>
+  <div class="recipe">
+    <div class="recipe-row"><b>01</b><strong>Write it down</strong><span>One project instruction file. Conventions, build command, what not to touch.</span></div>
+    <div class="recipe-row"><b>02</b><strong>Set the boundary</strong><span>Decide what runs without asking, and what always stops for you.</span></div>
+    <div class="recipe-row"><b>03</b><strong>Run something read-only</strong><span>Onboard it to a repository you already know. Check its answer.</span></div>
+    <div class="recipe-row"><b>04</b><strong>Add a finish line</strong><span>Put a verification criterion in one real prompt this week.</span></div>
+    <div class="recipe-row"><b>05</b><strong>Package what worked</strong><span>When you repeat a prompt a third time, make it a skill.</span></div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>Three rungs, and most people should stay on the first two for a while: personal and project instruction files plus permissions; then installing and writing skills; then hooks, subagents, and MCP once a routine is stable enough to be worth automating.</p></aside>
+</section>
+```
+
+- [ ] **Step 7: Renumber and re-caption**
+
+Every `<section class="slide">` carries `data-number` and `data-section`. Renumber `data-number` sequentially from `01` to `17` in document order, and set `data-section` per the spine table: `Orientation` (1–2), `Mental model` (3–5), `Control` (6–9), `Practice` (10–11), `Live demo 01` (12–13), `Live demo 02` (14–15), `Next move` (16–17).
+
+- [ ] **Step 8: Verify the count and the layout**
+
+Run:
+
+```bash
+grep -c '<section class="slide' slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
+```
+
+Expected: `17`.
+
+Run:
+
+```bash
+cd slide_deck/checks && node overflow.mjs && node filenames.mjs && node terminology.mjs
+```
+
+Expected: all three clean, exit code 0. The new slides are the most likely source of a clipping regression — if `overflow.mjs` reports one, shorten the offending copy rather than reducing the font size, since legibility is the point.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
+git commit -m "Restructure Codex deck to the 17-slide starter-pack spine"
+```
+
+---
+
+## Task 10: Port the ICISE structure into the kickoff deck
+
+The kickoff deck now becomes a structural clone of the ICISE deck with Claude Code terminology and its own skin. This is the task that turns `parity.mjs` green.
+
+**Files:**
+- Modify: `slide_deck/kickoff_overview_2026June12.html`
+
+- [ ] **Step 1: Preserve the skin, replace the skeleton**
+
+Keep exactly three things from the current kickoff file: the `<title>`, the `:root` custom-property block (ivory/coral/serif tokens), and the `--serif`/`--sans`/`--mono` font declarations. Replace everything else — all CSS rules and the entire `<body>` — with the ICISE deck's, so that class names and element structure match node for node.
+
+Concretely: copy the ICISE file, then substitute its `:root` block and font declarations with the kickoff ones, and change the `<title>` back to `Claude Code — CD3 Hack Friday`.
+
+- [ ] **Step 2: Map the tokens**
+
+The ICISE CSS references design tokens by name. Define the kickoff equivalents in its `:root` so no rule needs editing:
+
+```css
+  :root{
+    --bg:#EBDBBC; --fg:#141413; --muted:#6E6B63; --accent:#D97757;
+    --hairline:#E5E1D8; --panel:#F3E8CF;
+    --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+    --sans:ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  }
+```
+
+Then adjust `#notes-panel`'s background from the hard-coded `rgba(13, 13, 13, .97)` to `var(--panel)` and its text colour to `var(--muted)` in **both** decks, so the rule is shared rather than themed inline. Add `--panel:#141413` to the ICISE `:root`.
+
+- [ ] **Step 3: Translate the terminology**
+
+Apply the spec's terminology mapping table to the slide copy. The substitutions that must happen:
+
+| ICISE text | kickoff text |
+| --- | --- |
+| `codex` (CLI, prompt paths) | `claude` |
+| `~/.codex/AGENTS.md` | `~/.claude/CLAUDE.md` |
+| `./AGENTS.md` | `./CLAUDE.md` |
+| `subdir/AGENTS.override.md` | `./CLAUDE.local.md` |
+| `Codex reads…` | `Claude Code reads…` |
+| slide 6 boundary values | `permissions.allow` / `ask` / `deny`, evaluated deny → ask → allow, first match wins |
+| resources links | `code.claude.com/docs/en`, `/skills`, `/permissions`, `/memory` |
+
+Slide 7's `.stack-note` sentence stays **identical** in both decks — it was written in Task 9 step 3 to be true of both tools.
+
+- [ ] **Step 4: Add the one permitted cross-tool mention**
+
+On slide 7, inside the `speaker-notes` aside only:
+
+```html
+<p>If your repository already has an AGENTS.md for another agent, Claude Code does not read it directly — add a CLAUDE.md containing <code>@AGENTS.md</code>, or symlink one to the other, so both tools read the same instructions.</p>
+```
+
+This is the single Codex mention the terminology check allows in this deck.
+
+- [ ] **Step 5: Verify structural parity**
+
+Run:
+
+```bash
+cd slide_deck/checks && node parity.mjs
+```
+
+Expected: `PASS structural parity: N nodes identical in both decks`, exit code 0. If it fails, the reported line number names the first divergent node — a stray element or a class-name difference introduced during translation.
+
+- [ ] **Step 6: Verify everything else still holds**
+
+Run:
+
+```bash
+cd slide_deck/checks && node overflow.mjs && node terminology.mjs && node filenames.mjs
+```
+
+Expected: all clean. The kickoff deck now runs notes-open passes too, because it inherited the notes panel.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add slide_deck/kickoff_overview_2026June12.html slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
+git commit -m "Rebuild Claude Code deck as structural twin of the Codex deck"
+```
+
+---
+
+## Task 11: Aggregate runner and documentation
+
+**Files:**
+- Create: `slide_deck/checks/run-all.mjs`
+- Create: `slide_deck/README.md`
+
+- [ ] **Step 1: Write the runner**
+
+Create `slide_deck/checks/run-all.mjs`:
+
+```js
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const CHECKS = ['overflow.mjs', 'parity.mjs', 'terminology.mjs', 'filenames.mjs'];
+
+let failed = 0;
+for (const check of CHECKS) {
+  console.log(`\n=== ${check} ===`);
+  const r = spawnSync(process.execPath, [join(here, check)], { stdio: 'inherit' });
+  if (r.status !== 0) failed++;
+}
+
+console.log(failed ? `\n${failed} of ${CHECKS.length} check(s) failed` : `\nall ${CHECKS.length} checks passed`);
+process.exit(failed ? 1 : 0);
+```
+
+- [ ] **Step 2: Write the README**
+
+Create `slide_deck/README.md`:
+
+````markdown
+# Slide decks
+
+Two decks teaching the same agentic-workflow starter pack, one per tool.
+
+| File | Tool | Skin |
+| --- | --- | --- |
+| `kickoff_overview_2026June12.html` | Claude Code | ivory / coral, serif |
+| `AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html` | Codex | near-black / green, sans |
+
+Both are single-file, dependency-free, and work offline. Open either in a browser.
+
+**Navigation:** `←` `→` or click to move between slides. `N` toggles the notes
+panel, which carries the background detail the slides deliberately leave off.
+
+The two decks are *structural twins*: identical slide sequence and markup,
+differing only in terminology and theme tokens. `checks/parity.mjs` enforces
+this, so an edit to one deck that is not mirrored in the other fails the check.
+
+## Checks
+
+```bash
+cd checks && npm install && npx playwright install chromium
+npm run check
+```
+
+| Check | Enforces |
+| --- | --- |
+| `overflow.mjs` | No text is clipped, at four viewport sizes, notes open and closed |
+| `parity.mjs` | Both decks share one structural signature |
+| `terminology.mjs` | No cross-tool terminology leakage |
+| `filenames.mjs` | Every filename shown on a demo slide exists on disk |
+````
+
+- [ ] **Step 3: Run the full suite**
+
+Run:
+
+```bash
+cd slide_deck/checks && npm run check
+```
+
+Expected: four `=== check ===` sections, every one clean, final line `all 4 checks passed`, exit code 0.
+
+- [ ] **Step 4: Confirm the demos were not touched**
+
+Run:
+
+```bash
+git status --short codebase-onboarding_demo/ paper-to-mathematica-nb_demo/
+```
+
+Expected: no modifications introduced by this work (pre-existing untracked entries from before this plan may remain).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add slide_deck/checks/run-all.mjs slide_deck/README.md
+git commit -m "Add aggregate check runner and slide deck README"
+```
+
+---
+
+## Task 12: Final review pass
+
+- [ ] **Step 1: Read every slide of both decks at 1440×810**
+
+Run:
+
+```bash
+cd slide_deck/checks && node -e "
+import('playwright').then(async ({chromium}) => {
+  const { DECKS, fileUrl } = await import('./decks.mjs');
+  const b = await chromium.launch();
+  for (const d of DECKS) {
+    const p = await b.newPage({ viewport: { width: 1440, height: 810 } });
+    await p.goto(fileUrl(d.file));
+    const n = await p.evaluate(() => document.querySelectorAll('.slide').length);
+    for (let i = 0; i < n; i++) {
+      await p.evaluate((i) => { const s=[...document.querySelectorAll('.slide')]; s.forEach(x=>x.classList.remove('on')); s[i].classList.add('on'); }, i);
+      await p.screenshot({ path: \`/tmp/deck-\${d.file.slice(0,6)}-\${String(i+1).padStart(2,'0')}.png\` });
+    }
+    await p.close();
+  }
+  await b.close();
+  console.log('screenshots written to /tmp');
+});
+"
+```
+
+Expected: 34 PNGs in `/tmp`. Review them for wrapping, orphaned words, and uneven density. This catches what the automated probe cannot: text that fits but reads badly.
+
+- [ ] **Step 2: Confirm the register did not drift**
+
+Re-read the copy added in Task 9 against `docs/superpowers/specs/2026-08-10-codex-orientation-tone-revision-design.md`. That commit deliberately removed promotional slogans. Any new headline that promises a transformation rather than describing what the slide explains should be rewritten.
+
+- [ ] **Step 3: Confirm every spec requirement has landed**
+
+Walk the spec's Corrections list (5 items) and Verification list (4 checks). Each must be either implemented or explicitly recorded as not-done with a reason.
+
+- [ ] **Step 4: Commit any final copy adjustments**
+
+```bash
+git add slide_deck/
+git commit -m "Final copy pass on starter-pack decks"
+```
+
+---
+
+## Self-Review
+
+**Spec coverage.** Every spec section maps to a task: mirror-twin contract → Tasks 7 and 10; 17-slide spine → Task 9 (ICISE) and Task 10 (kickoff); cuts → Task 9 steps 1–3; corrections 1–3 → Tasks 4 and 5; correction 4 (media queries) → **absorbed into Task 10 step 1**, because the kickoff deck inherits the ICISE deck's stylesheet wholesale, including its `@media (max-width: 920px)` block, which is a cleaner fix than porting the rule separately; correction 5 (dead space) → Task 9 step 2 and Task 10 step 1; notes layer → Task 8; verification → Tasks 2, 3, 6, 7, 11.
+
+**Placeholder scan.** No step defers content. The two content-heavy tasks (9, 10) carry the actual slide markup and the actual substitution table rather than an instruction to write copy.
+
+**Type consistency.** `decks.mjs` exports `DECKS`, `DECK_DIR`, and `fileUrl`; all four checks import only those names. The `data-scrollable` attribute set in Task 8 step 2 is the same attribute read by the probe in Task 2 step 2. The `--panel` token introduced in Task 10 step 2 is added to both decks' `:root` in that same step.
+
+**Known ordering constraint.** Task 10 depends on Task 9 being complete, because it clones the ICISE structure. Running them out of order produces a twin of the wrong skeleton.
