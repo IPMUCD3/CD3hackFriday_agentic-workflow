@@ -1198,6 +1198,47 @@ On slide 7, inside the `speaker-notes` aside only:
 
 This is the single Codex mention the terminology check allows in this deck.
 
+- [ ] **Step 4b: Make the terminology check location-aware**
+
+`terminology.mjs` currently enforces a global hit *count* against a ceiling. The spec requires
+something a count cannot express: cross-tool mentions confined to slide 7's bridge note **and no
+others**. A count fails in both directions — a stray mention elsewhere slips under the ceiling if
+the legitimate note is trimmed, and one spec-accurate sentence citing `~/.codex/AGENTS.md` yields
+two regex hits and trips it.
+
+Fix it here, because this is the task that creates the marker it needs.
+
+First, mark the sanctioned note. The bridge aside added in step 4 gets an attribute:
+
+```html
+<aside class="speaker-notes" data-cross-tool>
+```
+
+Add the same attribute to the corresponding aside in the ICISE deck so the decks stay structurally
+identical — `parity.mjs` compares attribute names and will fail otherwise.
+
+Then replace the kickoff rule in `slide_deck/checks/terminology.mjs` so it strips the sanctioned
+element before counting, and requires zero hits everywhere else:
+
+```js
+// The spec permits cross-tool mentions in exactly one place: the bridge note on
+// the instruction-file slide, marked data-cross-tool. Everywhere else must be
+// clean. A global count cannot express "here and nowhere else" at any ceiling.
+const stripSanctioned = (html) => html.replace(/<aside[^>]*data-cross-tool[\s\S]*?<\/aside>/g, '');
+```
+
+Apply `stripSanctioned` to the kickoff deck's HTML before matching, and set its `maxHits` to `0`.
+Leave the ICISE rule as it is — it has no sanctioned exception.
+
+Verify:
+
+```bash
+cd slide_deck/checks && node terminology.mjs
+```
+
+Expected: both decks `PASS` with `0/0` hits, exit code 0. If the kickoff deck reports any hit, the
+mention is outside the sanctioned note and must be removed rather than accommodated.
+
 - [ ] **Step 5: Verify structural parity**
 
 Run:
