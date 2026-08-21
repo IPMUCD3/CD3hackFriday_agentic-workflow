@@ -1,17 +1,50 @@
 import { chromium } from 'playwright';
 import { DECKS, fileUrl } from './decks.mjs';
 
-// The structural signature is the tag/class tree with all text stripped.
-// Two mirror-twin decks must produce byte-identical signatures; only the
-// :root token block, font declarations, <title>, and text content may differ,
-// none of which appear here.
+// The structural signature is the tag/class/attribute tree with text stripped.
+// Two mirror-twin decks must produce identical signatures.
+//
+// Attribute NAMES are always compared, so a missing aria-label or a stray
+// attribute is caught. Attribute VALUES are compared only for the structural
+// ones, because href/aria-label/title carry human-readable text and the spec
+// permits text to differ where terminology genuinely differs.
+//
+// Everything this function needs must be declared INSIDE it: page.evaluate
+// serializes it with toString() and runs it in the browser context, where the
+// Node-side module scope does not exist.
 function signature() {
+  const STRUCTURAL_ATTRS = ['id', 'data-number', 'data-section'];
   const lines = [];
+
   const walk = (el, depth) => {
-    const cls = String(el.className || '').trim().split(/\s+/).filter(Boolean).sort().join('.');
-    lines.push('  '.repeat(depth) + el.tagName.toLowerCase() + (cls ? '.' + cls : ''));
+    // el.className is an SVGAnimatedString inside <svg> and stringifies to
+    // "[object SVGAnimatedString]", destroying the comparison. getAttribute is
+    // uniform across HTML and SVG.
+    const cls = (el.getAttribute('class') || '')
+      .trim().split(/\s+/).filter(Boolean).sort().join('.');
+
+    const attrNames = [...el.attributes]
+      .map((a) => a.name)
+      .filter((n) => n !== 'class')
+      .sort()
+      .join(',');
+
+    const structural = STRUCTURAL_ATTRS
+      .filter((a) => el.hasAttribute(a))
+      .map((a) => `${a}=${el.getAttribute(a)}`)
+      .join(',');
+
+    lines.push(
+      '  '.repeat(depth) +
+        el.tagName.toLowerCase() +
+        (cls ? '.' + cls : '') +
+        (attrNames ? ` [${attrNames}]` : '') +
+        (structural ? ` {${structural}}` : '')
+    );
+
     [...el.children].forEach((c) => walk(c, depth + 1));
   };
+
   [...document.body.children].forEach((c) => walk(c, 0));
   return lines;
 }
