@@ -508,35 +508,6 @@
     box-shadow: 0 0 0 6px var(--green-wash);
   }
 
-  .demo-context {
-    display: flex;
-    gap: 30px;
-    align-items: flex-start;
-    margin-top: clamp(34px, 5.2vh, 52px);
-    max-width: 1040px;
-  }
-
-  .demo-context div {
-    flex: 1;
-    padding-top: 16px;
-    border-top: 1px solid var(--line-strong);
-  }
-
-  .demo-context b {
-    color: var(--dim);
-    font: 700 12px/1.2 var(--mono);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-  }
-
-  .demo-context span {
-    display: block;
-    margin-top: 9px;
-    color: var(--muted);
-    font-size: clamp(18px, 1.55vw, 23px);
-    line-height: 1.35;
-  }
-
   .prompt-shell {
     margin-top: clamp(32px, 4.7vh, 46px);
     max-width: 1120px;
@@ -630,34 +601,6 @@
     margin-bottom: 4px;
   }
 
-  .bridge {
-    max-width: 1180px;
-    font-size: clamp(58px, 6.65vw, 96px);
-    line-height: 1.03;
-    letter-spacing: -0.055em;
-    font-weight: 580;
-  }
-
-  .bridge .step { color: var(--muted); }
-  .bridge .step:last-child { color: var(--green-soft); }
-
-  .equation {
-    margin-top: clamp(34px, 5.2vh, 50px);
-    max-width: 1160px;
-    padding: 26px 0 28px;
-    border-block: 1px solid var(--line-strong);
-    color: var(--ink);
-    font: 500 clamp(20px, 2.05vw, 30px)/1.42 var(--mono);
-    letter-spacing: -0.02em;
-  }
-
-  .equation .integral { color: var(--green-soft); }
-  .equation-note {
-    margin-top: 20px;
-    color: var(--muted);
-    font-size: clamp(17px, 1.45vw, 21px);
-  }
-
   .checks {
     margin-top: clamp(34px, 5.2vh, 52px);
     display: grid;
@@ -677,12 +620,6 @@
 
   .check:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
   .check span:last-child { color: var(--green-soft); font-size: 0.8em; }
-
-  .artifact-line {
-    margin-top: 22px;
-    color: var(--muted);
-    font: 550 14px/1.5 var(--mono);
-  }
 
   .recipe {
     margin-top: clamp(38px, 5.7vh, 56px);
@@ -752,9 +689,9 @@
     overflow-y: auto;
     padding: 24px 28px 28px;
     background: var(--panel);
-    border-top: 1px solid var(--green);
-    border-left: 1px solid var(--green);
-    border-bottom: 1px solid var(--green);
+    border-top: 1px solid var(--green-soft);
+    border-left: 1px solid var(--green-soft);
+    border-bottom: 1px solid var(--green-soft);
     z-index: 30;
     display: none;
   }
@@ -784,7 +721,6 @@
     h2 { font-size: clamp(38px, 6.6vw, 58px); }
     .slide { justify-content: flex-start !important; padding-top: 10vh; }
     .loop, .three-col { gap: 20px; }
-    .demo-context { flex-wrap: wrap; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -870,7 +806,7 @@
   </div>
 </section>
 
-<section class="slide" id="slide-6" data-number="06" data-section="Safe agency" aria-label="Safe agency">
+<section class="slide" id="slide-6" data-number="06" data-section="Control" aria-label="Safe agency">
   <p class="kicker">Safe agency</p>
   <h2>Sandboxing and approvals define<br>the operating boundaries.</h2>
   <div class="three-col">
@@ -890,11 +826,10 @@
       <p>Tests, renders, or comparisons provide checks on the result.</p>
     </div>
   </div>
-  <p class="stack-note">User defaults · ~/.codex/config.toml &nbsp;&nbsp; Project overrides · .codex/config.toml for trusted projects</p>
-  <aside class="speaker-notes"><p>[Sources]</p><p>https://learn.chatgpt.com/docs/agent-approvals-security.md; https://learn.chatgpt.com/docs/config-file/config-basic.md</p></aside>
+  <aside class="speaker-notes"><p>[Sources]</p><p>https://learn.chatgpt.com/docs/agent-approvals-security.md; https://learn.chatgpt.com/docs/config-file/config-basic.md</p><p>User defaults · ~/.codex/config.toml &nbsp;&nbsp; Project overrides · .codex/config.toml for trusted projects</p></aside>
 </section>
 
-<section class="slide" id="slide-7" data-number="07" data-section="Customization" aria-label="AGENTS.md instruction hierarchy">
+<section class="slide" id="slide-7" data-number="07" data-section="Control" aria-label="AGENTS.md instruction hierarchy">
   <p class="kicker">Persistent context</p>
   <h2>Guidance gets more specific<br>as the work gets closer.</h2>
   <div class="stack">
@@ -914,11 +849,57 @@
       <span>this subtree</span>
     </div>
   </div>
-  <p class="stack-note">Codex reads from the project root toward the working directory · closer guidance is applied later</p>
+  <p class="stack-note">Instruction files concatenate from the project root down toward where you are working — the closest guidance is read last.</p>
   <aside class="speaker-notes"><p>[Sources]</p><p>https://learn.chatgpt.com/docs/agent-configuration/agents-md</p></aside>
 </section>
 
-<section class="slide" id="slide-8" data-number="08" data-section="Customization" aria-label="Skills">
+<section class="slide" id="slide-8" data-number="08" data-section="Control" aria-label="Failure modes">
+  <p class="kicker">What goes wrong</p>
+  <h2>Three failure modes worth<br>recognizing early.</h2>
+  <div class="three-col">
+    <div class="principle">
+      <span class="n">01 · PLAUSIBLE</span>
+      <h3>Confident and wrong</h3>
+      <p>Fluent output is not evidence. An unverified result is a hypothesis.</p>
+    </div>
+    <div class="principle">
+      <span class="n">02 · DRIFT</span>
+      <h3>Silent scope creep</h3>
+      <p>A small request grows extra edits. Read the diff, not the summary.</p>
+    </div>
+    <div class="principle">
+      <span class="n">03 · REACH</span>
+      <h3>Edits you did not sanction</h3>
+      <p>Boundaries are configuration, not good intentions. Set them first.</p>
+    </div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>A fourth mode: work better done by hand. If you can write it faster than you can specify it, write it. The loop pays off when verification is cheaper than production.</p><p>Instruction files are context, not enforcement — the agent reads them and tries to comply, but nothing guarantees it. For a hard guarantee, use a hook or a deny rule.</p></aside>
+</section>
+
+<section class="slide" id="slide-9" data-number="09" data-section="Control" aria-label="Context and cost hygiene">
+  <p class="kicker">Session hygiene</p>
+  <h2>A session has a working<br>memory, and it fills up.</h2>
+  <div class="method">
+    <div class="method-row"><b>01</b><span>Scope the working set — point at the files that matter, not the whole tree</span></div>
+    <div class="method-row"><b>02</b><span>Start fresh when the task changes — a long session carries its whole history</span></div>
+    <div class="method-row"><b>03</b><span>Prefer one verified step to five unverified ones</span></div>
+  </div>
+  <aside class="speaker-notes"><p>Notes</p><p>Everything the session has read stays in context and is re-sent with each turn, so a long session is both slower and more expensive than a short one. Quality degrades too: relevant detail competes with everything read earlier.</p><p>Practical rule — one task per session. When you find yourself re-explaining what the session already did, start a new one and give it the conclusion rather than the history.</p></aside>
+</section>
+
+<section class="slide" id="slide-10" data-number="10" data-section="Practice" aria-label="Prompt recipe">
+  <p class="kicker">A reusable prompt recipe</p>
+  <h2>A practical prompt<br>names its own finish line.</h2>
+  <div class="recipe">
+    <div class="recipe-row"><b>01</b><strong>Objective</strong><span>What outcome matters?</span></div>
+    <div class="recipe-row"><b>02</b><strong>Context</strong><span>Which files, paper, or data should it use?</span></div>
+    <div class="recipe-row"><b>03</b><strong>Constraints</strong><span>What must remain unchanged?</span></div>
+    <div class="recipe-row"><b>04</b><strong>Deliverable</strong><span>Which artifact should exist?</span></div>
+    <div class="recipe-row"><b>05</b><strong>Verification</strong><span>What observation proves it works?</span></div>
+  </div>
+</section>
+
+<section class="slide" id="slide-11" data-number="11" data-section="Practice" aria-label="Skills">
   <p class="kicker">Reusable procedures</p>
   <h2>Skills package reusable<br>instructions and checks.</h2>
   <div class="skill-line">
@@ -935,20 +916,10 @@
   <aside class="speaker-notes"><p>[Sources]</p><p>https://learn.chatgpt.com/docs/build-skills</p></aside>
 </section>
 
-<section class="slide demo-slide" id="slide-9" data-number="09" data-section="Live demo 01" aria-label="Codebase onboarding demo setup">
+<section class="slide demo-slide" id="slide-12" data-number="12" data-section="Live demo 01" aria-label="Codebase onboarding demo">
   <div class="demo-tag">Live demo 01 · codebase onboarding</div>
-  <h2>Inspect an unfamiliar<br>codebase.</h2>
-  <p class="lede"><code>steady-2d-heat-inverse</code> solves a forward heat equation, then infers a spatially varying conductivity through an adjoint gradient and PETSc TAO.</p>
-  <div class="demo-context">
-    <div><b>What Codex receives</b><span>A clean copy of an unfamiliar repository</span></div>
-    <div><b>What we ask for</b><span>A working model backed by file evidence</span></div>
-    <div><b>Scale check</b><span>Repeat the map on <code>jaxPTPolyPol</code></span></div>
-  </div>
-</section>
-
-<section class="slide" id="slide-10" data-number="10" data-section="Live demo 01" aria-label="Codebase onboarding prompt">
-  <p class="kicker">Opening prompt · demo 01</p>
   <h2>State the task and how<br>the result will be checked.</h2>
+  <p class="lede"><code>steady-2d-heat-inverse</code> infers a spatially varying conductivity from a forward heat equation, through an adjoint gradient and PETSc TAO.</p>
   <div class="prompt-shell">
     <div class="prompt-bar">
       <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
@@ -957,9 +928,10 @@
     <div class="prompt-body">Onboard me to this repository as a research collaborator. Independently inspect the source, configuration, and tests; do not rely on prewritten agent notes. Explain the scientific objective; trace the forward → adjoint → optimization data flow; identify the main entry points and test strategy; and flag the first risks I should know about. Cite the files you used. Then create concise AGENTS.md guidance. Do not modify scientific source code.</div>
   </div>
   <p class="handoff">Switch to the terminal →</p>
+  <aside class="speaker-notes"><p>Setup</p><p>What Codex receives: a clean copy of an unfamiliar repository. What we ask for: a working model backed by file evidence. Scale check: repeat the same map on jaxPTPolyPol.</p></aside>
 </section>
 
-<section class="slide" id="slide-11" data-number="11" data-section="Live demo 01" aria-label="Codebase onboarding debrief">
+<section class="slide" id="slide-13" data-number="13" data-section="Live demo 01" aria-label="Codebase onboarding debrief">
   <p class="kicker">Debrief · demo 01</p>
   <h2>An onboarding summary connects<br>structure, tests, and risks.</h2>
   <div class="debrief">
@@ -972,33 +944,15 @@
       <p><strong>ENTRY POINTS</strong><code>forward_solver.py</code>, <code>adjoint_solver.py</code>, <code>tao_solver.py</code></p>
       <p><strong>TEST STRATEGY</strong>Finite difference, tangent-linear, and Taylor-remainder gradient checks.</p>
       <p><strong>EARLY RISK</strong>The project installs flat modules: use <code>from forward_solver</code>, not a presumed <code>src</code> package.</p>
-      <p><strong>SCALE CHECK</strong>The same evidence-first map applies to the larger <code>jaxPTPolyPol</code> research stack.</p>
     </div>
   </div>
-  <aside class="speaker-notes"><p>[Sources]</p><p>codebase-onboarding_demo/steady-2d-heat-inverse/README.md; source modules; tests/test_grad_*.py</p></aside>
+  <aside class="speaker-notes"><p>Sources</p><p>codebase-onboarding_demo/steady-2d-heat-inverse/README.md; source modules; tests/test_grad_*.py</p><p>Scale check: the same evidence-first map applies to the larger jaxPTPolyPol research stack.</p></aside>
 </section>
 
-<section class="slide" id="slide-12" data-number="12" data-section="Bridge" aria-label="Bridge between demonstrations">
-  <p class="kicker neutral">Two demonstrations</p>
-  <p class="bridge"><span class="step">Demo 01</span><br><span class="step">inspect · map · check</span><br><span class="step">Demo 02</span><br><span class="step">extract · derive · compare</span></p>
-</section>
-
-<section class="slide demo-slide" id="slide-13" data-number="13" data-section="Live demo 02" aria-label="Paper to Mathematica demo setup">
+<section class="slide demo-slide" id="slide-14" data-number="14" data-section="Live demo 02" aria-label="Paper to Mathematica demo">
   <div class="demo-tag">Live demo 02 · paper to Mathematica</div>
-  <h2>Derive and check the covariance<br>expressions from the paper.</h2>
-  <div class="equation">
-    Cov[P<sub>ℓ₁</sub>(k), P<sub>ℓ₂</sub>(k)] ∝
-    <span class="integral">∫<sub>−1</sub><sup>1</sup> dμ</span>
-    𝓛<sub>ℓ₁</sub>(μ) 𝓛<sub>ℓ₂</sub>(μ)
-    [P<sub>g</sub>(k,μ) + 1/n<sub>g</sub>]<sup>2</sup>
-  </div>
-  <p class="equation-note">Target: six independent entries for ℓ ∈ {0, 2, 4}. To match Eq. (B2), absorb 1/n<sub>g</sub> into P<sub>0</sub>.</p>
-  <aside class="speaker-notes"><p>[Sources]</p><p>paper-to-mathematica-nb_demo/Chudaykin-Ivanov_2019.pdf, Appendix B, Eqs. (B1)–(B2)</p></aside>
-</section>
-
-<section class="slide" id="slide-14" data-number="14" data-section="Live demo 02" aria-label="Paper to Mathematica prompt">
-  <p class="kicker">Opening prompt · demo 02</p>
   <h2>Derive, run, and<br>compare the result.</h2>
+  <p class="lede">Cov[P<sub>ℓ₁</sub>(k), P<sub>ℓ₂</sub>(k)] ∝ <span class="integral">∫<sub>−1</sub><sup>1</sup> dμ</span> 𝓛<sub>ℓ₁</sub>(μ) 𝓛<sub>ℓ₂</sub>(μ) [P<sub>g</sub>(k,μ) + 1/n<sub>g</sub>]<sup>2</sup></p>
   <div class="prompt-shell">
     <div class="prompt-bar">
       <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
@@ -1007,6 +961,7 @@
     <div class="prompt-body">Treat the PDF as the source of truth; do not inspect existing solution artifacts before deriving. Reproduce Chudaykin–Ivanov (2019), p.45, Eqs. (B1)–(B2), and state the conventions. First create and run a Wolfram verification script that evaluates the exact μ integrals and prints MATCH or MISMATCH for all six independent entries. Only after six matches, compose a reviewer-friendly Mathematica notebook and report the validation command.</div>
   </div>
   <p class="handoff">Switch to the terminal →</p>
+  <aside class="speaker-notes"><p>Setup</p><p>Source: paper-to-mathematica-nb_demo/Chudaykin-Ivanov_2019.pdf, Appendix B, Eqs. (B1)–(B2).</p><p>Target: six independent entries for ℓ ∈ {0, 2, 4}. To match Eq. (B2), absorb 1/n_g into P_0.</p></aside>
 </section>
 
 <section class="slide" id="slide-15" data-number="15" data-section="Live demo 02" aria-label="Paper to Mathematica verification">
@@ -1024,16 +979,17 @@
   <aside class="speaker-notes"><p>Sources</p><p>paper-to-mathematica-nb_demo/verify_power_spectrum_multipole_covariance.wls; paper-to-mathematica-nb_demo/PowerSpectrumMultipoleGaussianCovariance.nb. Validation command: /Applications/Wolfram.app/Contents/MacOS/WolframKernel -script verify_power_spectrum_multipole_covariance.wls</p></aside>
 </section>
 
-<section class="slide" id="slide-16" data-number="16" data-section="Practice" aria-label="Prompt recipe">
-  <p class="kicker">A reusable prompt recipe</p>
-  <h2>A practical prompt<br>includes five pieces.</h2>
+<section class="slide" id="slide-16" data-number="16" data-section="Next move" aria-label="First week on-ramp">
+  <p class="kicker">Where to start</p>
+  <h2>Five things, in this order.</h2>
   <div class="recipe">
-    <div class="recipe-row"><b>01</b><strong>Objective</strong><span>What outcome matters?</span></div>
-    <div class="recipe-row"><b>02</b><strong>Context</strong><span>Which files, paper, or data should it use?</span></div>
-    <div class="recipe-row"><b>03</b><strong>Constraints</strong><span>What must remain unchanged?</span></div>
-    <div class="recipe-row"><b>04</b><strong>Deliverable</strong><span>Which artifact should exist?</span></div>
-    <div class="recipe-row"><b>05</b><strong>Verification</strong><span>What observation proves it works?</span></div>
+    <div class="recipe-row"><b>01</b><strong>Write it down</strong><span>One project instruction file. Conventions, build command, what not to touch.</span></div>
+    <div class="recipe-row"><b>02</b><strong>Set the boundary</strong><span>Decide what runs without asking, and what always stops for you.</span></div>
+    <div class="recipe-row"><b>03</b><strong>Run something read-only</strong><span>Onboard it to a repository you already know. Check its answer.</span></div>
+    <div class="recipe-row"><b>04</b><strong>Add a finish line</strong><span>Put a verification criterion in one real prompt this week.</span></div>
+    <div class="recipe-row"><b>05</b><strong>Package what worked</strong><span>When you repeat a prompt a third time, make it a skill.</span></div>
   </div>
+  <aside class="speaker-notes"><p>Notes</p><p>Three rungs, and most people should stay on the first two for a while: personal and project instruction files plus permissions; then installing and writing skills; then hooks, subagents, and MCP once a routine is stable enough to be worth automating.</p></aside>
 </section>
 
 <section class="slide" id="slide-17" data-number="17" data-section="Next move" aria-label="Closing and resources">
