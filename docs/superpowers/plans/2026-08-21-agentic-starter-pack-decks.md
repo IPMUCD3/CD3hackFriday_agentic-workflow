@@ -265,15 +265,26 @@ function walk(dir, out = new Set()) {
   return out;
 }
 
+// The demo repositories are nested, untracked git repos. On a fresh clone they
+// are absent, and a missing file then means "not checked out", not "wrong name".
+// Fail only when every demo directory is present; otherwise warn and pass.
+const absentDirs = DEMO_DIRS.filter((d) => !existsSync(join(REPO, d)));
 const onDisk = new Set();
 for (const d of DEMO_DIRS) for (const f of walk(join(REPO, d))) onDisk.add(f);
+
+if (absentDirs.length) {
+  console.warn(`SKIP demo directories not checked out: ${absentDirs.join(', ')}`);
+  console.warn('     filename mismatches will be reported as warnings, not failures');
+}
 
 let failures = 0;
 for (const deck of DECKS) {
   const html = readFileSync(join(DECK_DIR, deck.file), 'utf8');
   const named = new Set((html.match(ARTIFACT) || []).filter((f) => !IGNORE.has(f)));
   const missing = [...named].filter((f) => !onDisk.has(f));
-  if (missing.length) {
+  if (missing.length && absentDirs.length) {
+    console.warn(`WARN ${deck.name}: unverifiable -> ${missing.join(', ')}`);
+  } else if (missing.length) {
     failures += missing.length;
     console.error(`FAIL ${deck.name}: named on a slide but not on disk -> ${missing.join(', ')}`);
   } else {
@@ -635,7 +646,7 @@ Replace with:
     max-height: 62vh;
     overflow-y: auto;
     padding: 24px 28px 28px;
-    background: rgba(13, 13, 13, .97);
+    background: var(--panel);
     border-top: 1px solid var(--accent);
     border-left: 1px solid var(--accent);
     z-index: 9;
@@ -650,12 +661,18 @@ Replace with:
     color: var(--accent);
     margin-bottom: 12px;
   }
-  #notes-panel p { font-size: 14.5px; line-height: 1.6; color: #C9C9C4; margin-bottom: 10px; }
+  #notes-panel p { font-size: 14.5px; line-height: 1.6; color: var(--panel-fg); margin-bottom: 10px; }
   #notes-panel p:last-child { margin-bottom: 0; }
   #notes-panel .empty { color: #6E6E68; font-style: italic; }
 ```
 
-The `overflow-y: auto` and `max-height` are what satisfy the spec's requirement that the panel scroll rather than clip.
+Then add the two tokens this rule needs to the ICISE `:root` block, alongside the existing custom properties:
+
+```css
+    --panel:#0D0D0D; --panel-fg:#C9C9C4;
+```
+
+The `overflow-y: auto` and `max-height` are what satisfy the spec's requirement that the panel scroll rather than clip. Defining `--panel` and `--panel-fg` here rather than hardcoding colours is what lets Task 10 reskin the panel by changing two token values instead of editing the rule.
 
 - [ ] **Step 2: Add the panel element**
 
@@ -724,55 +741,129 @@ git commit -m "Add toggleable notes panel to Codex deck"
 
 ## Task 9: Restructure the ICISE deck to the 17-slide spine
 
-This is the content task. Work slide by slide against the spine table in the spec. The ICISE deck is at 17 slides already, so this is a substitution, not a net addition: the Bridge slide and one demo-framing slide give up their positions to the two new ★ slides.
+This is the content task. Work against the spine table in the spec.
+
+**Arithmetic, stated explicitly because it is easy to get wrong.** The deck starts at 17
+slides. One slide is deleted (Bridge), two pairs are merged into one slide each (the demo
+setup and its opening prompt), and three new slides are added. 17 − 1 − 2 + 3 = **17**.
+
+Final mapping from current slide ids to spine positions:
+
+| Spine | Source |
+| ---: | --- |
+| 1–7 | `slide-1` … `slide-7`, unchanged in position |
+| 8 | **new** — Failure modes |
+| 9 | **new** — Context and cost hygiene |
+| 10 | `slide-16` (prompt recipe), moved up |
+| 11 | `slide-8` (skills), moved down |
+| 12 | `slide-9` **merged with** `slide-10` |
+| 13 | `slide-11` |
+| 14 | `slide-13` **merged with** `slide-14` |
+| 15 | `slide-15` |
+| 16 | **new** — Your first week |
+| 17 | `slide-17` |
+| — | `slide-12` (Bridge) **deleted** |
 
 **Files:**
 - Modify: `slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html`
 
 - [ ] **Step 1: Delete the Bridge slide**
 
-Remove the entire `<section>` with `id="slide-12"` (the `data-section="Bridge"` slide, whose body is only the `.bridge` paragraph). It carries no concept the surrounding slides do not already establish.
+Remove the entire `<section>` with `id="slide-12"` — the `data-section="Bridge"` slide whose
+body is only the `.bridge` paragraph. It carries no concept the surrounding slides do not
+already establish.
 
-- [ ] **Step 2: Move the demo-01 aside off the slide face**
+- [ ] **Step 2: Merge the demo-01 setup and prompt slides**
 
-On slide 11, find and delete this row from the `.evidence-list`:
+Replace both `slide-9` and `slide-10` with this single section. The prompt shell is the most
+practical artifact in the deck for a student, so it is what survives on the slide face; the
+setup slide's `.demo-context` grid moves into the notes.
+
+```html
+<section class="slide demo-slide" data-number="12" data-section="Live demo 01" aria-label="Codebase onboarding demo">
+  <div class="demo-tag">Live demo 01 · codebase onboarding</div>
+  <h2>State the task and how<br>the result will be checked.</h2>
+  <p class="lede"><code>steady-2d-heat-inverse</code> infers a spatially varying conductivity from a forward heat equation, through an adjoint gradient and PETSc TAO.</p>
+  <div class="prompt-shell">
+    <div class="prompt-bar">
+      <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
+      <span class="prompt-path">codex · steady-2d-heat-inverse</span>
+    </div>
+    <div class="prompt-body">Onboard me to this repository as a research collaborator. Independently inspect the source, configuration, and tests; do not rely on prewritten agent notes. Explain the scientific objective; trace the forward → adjoint → optimization data flow; identify the main entry points and test strategy; and flag the first risks I should know about. Cite the files you used. Then create concise AGENTS.md guidance. Do not modify scientific source code.</div>
+  </div>
+  <p class="handoff">Switch to the terminal →</p>
+  <aside class="speaker-notes"><p>Setup</p><p>What Codex receives: a clean copy of an unfamiliar repository. What we ask for: a working model backed by file evidence. Scale check: repeat the same map on jaxPTPolyPol.</p></aside>
+</section>
+```
+
+- [ ] **Step 3: Merge the demo-02 setup and prompt slides**
+
+Replace both `slide-13` and `slide-14` with this single section:
+
+```html
+<section class="slide demo-slide" data-number="14" data-section="Live demo 02" aria-label="Paper to Mathematica demo">
+  <div class="demo-tag">Live demo 02 · paper to Mathematica</div>
+  <h2>Derive, run, and<br>compare the result.</h2>
+  <p class="lede">Cov[P<sub>ℓ₁</sub>(k), P<sub>ℓ₂</sub>(k)] ∝ <span class="integral">∫<sub>−1</sub><sup>1</sup> dμ</span> 𝓛<sub>ℓ₁</sub>(μ) 𝓛<sub>ℓ₂</sub>(μ) [P<sub>g</sub>(k,μ) + 1/n<sub>g</sub>]<sup>2</sup></p>
+  <div class="prompt-shell">
+    <div class="prompt-bar">
+      <span class="prompt-dot"></span><span class="prompt-dot"></span><span class="prompt-dot"></span>
+      <span class="prompt-path">codex · paper-to-mathematica-nb_demo</span>
+    </div>
+    <div class="prompt-body">Treat the PDF as the source of truth; do not inspect existing solution artifacts before deriving. Reproduce Chudaykin–Ivanov (2019), p.45, Eqs. (B1)–(B2), and state the conventions. First create and run a Wolfram verification script that evaluates the exact μ integrals and prints MATCH or MISMATCH for all six independent entries. Only after six matches, compose a reviewer-friendly Mathematica notebook and report the validation command.</div>
+  </div>
+  <p class="handoff">Switch to the terminal →</p>
+  <aside class="speaker-notes"><p>Setup</p><p>Source: paper-to-mathematica-nb_demo/Chudaykin-Ivanov_2019.pdf, Appendix B, Eqs. (B1)–(B2).</p><p>Target: six independent entries for ℓ ∈ {0, 2, 4}. To match Eq. (B2), absorb 1/n_g into P_0.</p></aside>
+</section>
+```
+
+Note the `.equation` block is replaced by a `.lede` carrying the same expression. If the
+equation renders poorly at that size, keep the `.equation` class instead and move the
+`<h2>` into the notes — but the two decks must make the same choice, since Task 10 clones
+whatever this produces.
+
+- [ ] **Step 4: Move the demo-01 aside off the slide face**
+
+On the demo-01 debrief (`slide-11`), find and delete this row from the `.evidence-list`:
 
 ```html
       <p><strong>SCALE CHECK</strong>The same evidence-first map applies to the larger <code>jaxPTPolyPol</code> research stack.</p>
 ```
 
-Then extend that slide's existing `<aside class="speaker-notes">` with the fact it was carrying:
+Then replace that slide's `speaker-notes` aside with:
 
 ```html
   <aside class="speaker-notes"><p>Sources</p><p>codebase-onboarding_demo/steady-2d-heat-inverse/README.md; source modules; tests/test_grad_*.py</p><p>Scale check: the same evidence-first map applies to the larger jaxPTPolyPol research stack.</p></aside>
 ```
 
-Removing this row also closes the empty bottom-left quadrant noted in the spec, because the remaining three rows balance the science-loop column.
+Removing this row also closes the empty bottom-left quadrant noted in the spec, because the
+remaining three rows balance the science-loop column.
 
-- [ ] **Step 3: Move the remaining micro-copy into notes**
+- [ ] **Step 5: Move the remaining micro-copy into notes**
 
-Delete each of these from its slide face, appending the same text to that slide's `speaker-notes` aside:
+Delete each of these from its slide face, appending the same text to that slide's
+`speaker-notes` aside:
 
 | Slide | Delete this element |
 | --- | --- |
-| 6 | `<p class="stack-note">User defaults · ~/.codex/config.toml &nbsp;&nbsp; Project overrides · .codex/config.toml for trusted projects</p>` |
-| 7 | `<p class="stack-note">Codex reads from the project root toward the working directory · closer guidance is applied later</p>` |
-| 13 | `<p class="equation-note">Target: six independent entries for ℓ ∈ {0, 2, 4}. To match Eq. (B2), absorb 1/n<sub>g</sub> into P<sub>0</sub>.</p>` |
+| `slide-6` | `<p class="stack-note">User defaults · ~/.codex/config.toml &nbsp;&nbsp; Project overrides · .codex/config.toml for trusted projects</p>` |
 
-Exception: slide 7's sentence is the one statement that is true of **both** tools and is load-bearing for the teaching. Keep it on the slide face, but reword it to the tool-neutral form so the kickoff deck can carry the identical sentence:
+**`slide-7`'s `.stack-note` is the one exception — keep it on the slide face**, reworded to
+the tool-neutral form so the kickoff deck can carry the identical sentence. It is the single
+statement true of both tools and is load-bearing for the mirror-twin design:
 
 ```html
     <p class="stack-note">Instruction files concatenate from the project root down toward where you are working — the closest guidance is read last.</p>
 ```
 
-- [ ] **Step 4: Add slide 8 — Failure modes**
+- [ ] **Step 6: Add slide 8 — Failure modes**
 
-Insert a new `<section>` after the skills slide, matching the surrounding markup conventions:
+Insert after `slide-7`:
 
 ```html
 <section class="slide" data-number="08" data-section="Control" aria-label="Failure modes">
   <p class="kicker">What goes wrong</p>
-  <h2>Four failure modes worth<br>recognizing early.</h2>
+  <h2>Three failure modes worth<br>recognizing early.</h2>
   <div class="three-col">
     <div class="principle">
       <span class="n">01 · PLAUSIBLE</span>
@@ -794,9 +885,12 @@ Insert a new `<section>` after the skills slide, matching the surrounding markup
 </section>
 ```
 
-- [ ] **Step 5: Add slide 9 — Context and cost hygiene**
+The headline says three because `.three-col` renders three columns. The fourth mode lives in
+the notes, which is where the plan already put it.
 
-Insert immediately after slide 8:
+- [ ] **Step 7: Add slide 9 — Context and cost hygiene**
+
+Insert immediately after the failure-modes slide:
 
 ```html
 <section class="slide" data-number="09" data-section="Control" aria-label="Context and cost hygiene">
@@ -811,9 +905,22 @@ Insert immediately after slide 8:
 </section>
 ```
 
-- [ ] **Step 6: Add slide 16 — Your first week**
+- [ ] **Step 8: Reorder the practice pair**
 
-Insert immediately before the resources slide:
+Move the prompt-recipe section (currently `slide-16`, the one whose `.kicker` reads
+"A reusable prompt recipe") so it sits immediately after the hygiene slide, and move the
+skills section (currently `slide-8`) so it sits immediately after the recipe. Change the
+recipe slide's `<h2>` to:
+
+```html
+  <h2>A practical prompt<br>names its own finish line.</h2>
+```
+
+Everything else in both sections is unchanged — this is a move, not a rewrite.
+
+- [ ] **Step 9: Add slide 16 — Your first week**
+
+Insert immediately before the resources slide (`slide-17`):
 
 ```html
 <section class="slide" data-number="16" data-section="Next move" aria-label="First week on-ramp">
@@ -830,11 +937,15 @@ Insert immediately before the resources slide:
 </section>
 ```
 
-- [ ] **Step 7: Renumber and re-caption**
+- [ ] **Step 10: Renumber and re-caption**
 
-Every `<section class="slide">` carries `data-number` and `data-section`. Renumber `data-number` sequentially from `01` to `17` in document order, and set `data-section` per the spine table: `Orientation` (1–2), `Mental model` (3–5), `Control` (6–9), `Practice` (10–11), `Live demo 01` (12–13), `Live demo 02` (14–15), `Next move` (16–17).
+Every `<section class="slide">` carries `data-number` and `data-section`, and most carry an
+`id`. Renumber `data-number` sequentially `01`–`17` in document order, renumber each `id` to
+match (`slide-1` … `slide-17`), and set `data-section` per the spine: `Orientation` (1–2),
+`Mental model` (3–5), `Control` (6–9), `Practice` (10–11), `Live demo 01` (12–13),
+`Live demo 02` (14–15), `Next move` (16–17).
 
-- [ ] **Step 8: Verify the count and the layout**
+- [ ] **Step 11: Verify the count**
 
 Run:
 
@@ -842,7 +953,10 @@ Run:
 grep -c '<section class="slide' slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
 ```
 
-Expected: `17`.
+Expected: exactly `17`. If it is not 17, the merges in steps 2–3 left a duplicate section
+behind — find it before continuing, because Task 10 clones this structure.
+
+- [ ] **Step 12: Verify layout and content**
 
 Run:
 
@@ -850,9 +964,12 @@ Run:
 cd slide_deck/checks && node overflow.mjs && node filenames.mjs && node terminology.mjs
 ```
 
-Expected: all three clean, exit code 0. The new slides are the most likely source of a clipping regression — if `overflow.mjs` reports one, shorten the offending copy rather than reducing the font size, since legibility is the point.
+Expected: all three clean, exit code 0. The two merged demo slides and the three new slides
+are the likely sources of a clipping regression — if `overflow.mjs` reports one, shorten the
+offending copy rather than reducing the font size, since legibility is the whole point of
+the constraint.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 13: Commit**
 
 ```bash
 git add slide_deck/AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html
@@ -881,14 +998,14 @@ The ICISE CSS references design tokens by name. Define the kickoff equivalents i
 ```css
   :root{
     --bg:#EBDBBC; --fg:#141413; --muted:#6E6B63; --accent:#D97757;
-    --hairline:#E5E1D8; --panel:#F3E8CF;
+    --hairline:#E5E1D8; --panel:#F3E8CF; --panel-fg:#4A4740;
     --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
     --sans:ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
     --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
   }
 ```
 
-Then adjust `#notes-panel`'s background from the hard-coded `rgba(13, 13, 13, .97)` to `var(--panel)` and its text colour to `var(--muted)` in **both** decks, so the rule is shared rather than themed inline. Add `--panel:#141413` to the ICISE `:root`.
+The `--panel` and `--panel-fg` tokens were introduced in Task 8, so the notes-panel rule needs no editing — only these two values differ.
 
 - [ ] **Step 3: Translate the terminology**
 
@@ -905,6 +1022,25 @@ Apply the spec's terminology mapping table to the slide copy. The substitutions 
 | resources links | `code.claude.com/docs/en`, `/skills`, `/permissions`, `/memory` |
 
 Slide 7's `.stack-note` sentence stays **identical** in both decks — it was written in Task 9 step 3 to be true of both tools.
+
+- [ ] **Step 3b: Carry Task 5's corrections into the new structure**
+
+Task 5 corrected two facts in the kickoff deck's old body, which this task replaces. Both
+must land in the new structure or the correction is lost:
+
+- The **permissions precedence** fact belongs on the boundaries slide (spine position 6):
+  rules evaluate deny → ask → allow, first match wins, and specificity does not affect the
+  order.
+- The **concatenation** fact is already carried by slide 7's shared `.stack-note`, written
+  in Task 9 step 5. Confirm it survived the clone verbatim.
+
+Verify neither reverted:
+
+```bash
+grep -c 'MORE SPECIFIC WINS' slide_deck/kickoff_overview_2026June12.html
+```
+
+Expected: `0`.
 
 - [ ] **Step 4: Add the one permitted cross-tool mention**
 
