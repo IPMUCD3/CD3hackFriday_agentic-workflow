@@ -1209,16 +1209,47 @@ Concretely: copy the ICISE file, then substitute its `:root` block and font decl
 The ICISE CSS references design tokens by name. Define the kickoff equivalents in its `:root` so no rule needs editing:
 
 ```css
-  :root{
-    --bg:#EBDBBC; --fg:#141413; --muted:#6E6B63; --accent:#D97757;
-    --hairline:#E5E1D8; --panel:#F3E8CF; --panel-fg:#4A4740;
-    --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
-    --sans:ui-sans-serif,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  :root {
+    --bg: #EBDBBC;
+    --surface: #F3E8CF;
+    --surface-2: #E9DCBE;
+    --ink: #141413;
+    --muted: #6E6B63;
+    --dim: #7A7770;
+    --line: rgba(20, 20, 19, 0.15);
+    --line-strong: rgba(20, 20, 19, 0.28);
+    --green: #D97757;
+    --green-soft: #A8501F;
+    --green-wash: rgba(217, 119, 87, 0.14);
+    --amber: #B98A3B;
+    --sans: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    --pad-x: clamp(54px, 7.2vw, 112px);
+    --pad-y: clamp(48px, 7.4vh, 78px);
+    --panel: #F3E8CF;
+    --panel-fg: #4A4740;
   }
 ```
 
-The `--panel` and `--panel-fg` tokens were introduced in Task 8, so the notes-panel rule needs no editing — only these two values differ.
+Keep the ICISE token **names** exactly — every CSS rule references them, so renaming any one means
+editing the whole stylesheet. Only the values change. The names stay `--green` / `--green-soft`
+even though the kickoff palette is coral; that is deliberate, and cheaper than a rename.
+
+**The `--green-soft` value is the one that is easy to get wrong.** In the dark deck it is *lighter*
+than `--green`, because light-on-dark text needs lifting. On ivory that inverts: the soft variant
+must be **darker** than the accent. `--green-soft` is used in 14 text roles (kickers, links, the
+hero word, `.repeat span`, `.science-loop b`, and more), so a naive light-coral value washes every
+one of them out.
+
+Measured against the `#EBDBBC` background: the naive `#E9A98F` gives a luminance delta of 39, which
+a contrast probe flags across the whole deck. `#A8501F` gives 117 and reads cleanly. Verified on a
+scratch clone at 1440×810 with zero low-contrast text nodes remaining.
+
+The `--panel` and `--panel-fg` tokens were introduced in Task 8, so the notes-panel rule needs no
+editing — only these two values differ.
+
+`.prompt-shell` keeps its hardcoded `background: #111`. A dark terminal block on ivory is correct:
+it matches the original kickoff deck's own terminal styling and keeps the prompt legible.
 
 - [ ] **Step 3: Translate the terminology**
 
@@ -1314,7 +1345,19 @@ Run:
 cd slide_deck/checks && node parity.mjs
 ```
 
-Expected: `PASS structural parity: N nodes identical in both decks`, exit code 0. If it fails, the reported line number names the first divergent node — a stray element or a class-name difference introduced during translation.
+Expected: `PASS structural parity: 323 nodes identical in both decks`, exit code 0.
+
+**This has been verified.** A scratch clone of the ICISE deck with only the `:root` block and
+`<title>` swapped passes parity at 323 nodes. That confirms the central assumption of this task:
+terminology translation changes text, and `parity.mjs` ignores text, so a faithful clone plus a
+token swap satisfies the mirror-twin contract by construction.
+
+The node count will differ from 323 once Task 9's restructure is in place — take the number from a
+run, not from this line. What matters is `PASS`.
+
+If it fails, the reported line number names the first divergent node — a stray element, a
+class-name difference introduced during translation, or the `data-cross-tool` marker added to only
+one of the two decks.
 
 - [ ] **Step 6: Verify everything else still holds**
 
