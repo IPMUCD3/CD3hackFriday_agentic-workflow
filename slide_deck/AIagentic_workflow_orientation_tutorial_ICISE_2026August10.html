@@ -754,7 +754,7 @@
     background: var(--panel);
     border-top: 1px solid var(--green);
     border-left: 1px solid var(--green);
-    z-index: 9;
+    z-index: 30;
     display: none;
   }
   #notes-panel.open { display: block; }
@@ -1046,7 +1046,7 @@
   <aside class="speaker-notes"><p>[Sources]</p><p>Official OpenAI documentation links shown on slide.</p></aside>
 </section>
 
-<div id="notes-panel" data-notes-panel aria-live="polite">
+<div id="notes-panel" data-notes-panel role="region" aria-label="Speaker notes">
   <h4>Notes — press N to hide</h4>
   <div id="notes-body"></div>
 </div>
@@ -1083,7 +1083,7 @@
       slide.setAttribute("aria-hidden", active ? "false" : "true");
     });
     progress.style.width = (((index + 1) / slides.length) * 100) + "%";
-    counter.textContent = String(index + 1).padStart(2, "0") + " / " + slides.length + " · ← →";
+    counter.textContent = String(index + 1).padStart(2, "0") + " / " + slides.length + " · ← → · N notes";
     sectionName.textContent = slides[index].dataset.section || "Orientation";
     document.title = slides[index].getAttribute("aria-label") + " — Codex Orientation";
     if (updateHash !== false && window.location.hash !== "#" + (index + 1)) {
@@ -1118,6 +1118,7 @@
 
   window.addEventListener("click", function (event) {
     if (event.target.closest("a")) return;
+    if (event.target.closest("#notes-panel")) return;
     if (event.clientX >= window.innerWidth / 2) next();
     else previous();
   });
