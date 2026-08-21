@@ -1025,8 +1025,12 @@
 
   function renderNotes() {
     const current = slides[index];
-    const notes = current ? current.querySelector(".speaker-notes") : null;
-    notesBody.innerHTML = notes ? notes.innerHTML : '<p class="empty">No notes for this slide.</p>';
+    // A slide may carry more than one aside (sources plus artifacts). querySelector
+    // would silently render only the first and drop the rest.
+    const notes = current ? [...current.querySelectorAll(".speaker-notes")] : [];
+    notesBody.innerHTML = notes.length
+      ? notes.map((n) => n.innerHTML).join("")
+      : '<p class="empty">No notes for this slide.</p>';
   }
 
   function indexFromHash() {
