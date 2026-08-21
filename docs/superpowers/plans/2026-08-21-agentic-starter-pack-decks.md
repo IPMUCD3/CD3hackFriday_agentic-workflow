@@ -219,9 +219,25 @@ Run:
 cd slide_deck/checks && node overflow.mjs
 ```
 
-Expected: eight `PASS` lines (2 decks × 4 viewports; the notes pass is skipped because neither deck has a notes panel yet), then `overflow: clean`, exit code 0.
+Expected: **seven `PASS` lines and one `FAIL`**, then `overflow: 1 finding(s)`, exit code 1.
 
-If this reports failures, stop — the baseline assumption in the spec is wrong and the spec needs revisiting before any edit.
+The single expected failure is:
+
+```
+FAIL ICISE (Codex) @ 1280x620
+      {"slide":11,"kind":"slide-scrolls","detail":"28px"}
+```
+
+This is correct behaviour, not a harness bug. Slide 11's four-row `.evidence-list` genuinely
+overflows at that viewport — a real pre-existing defect the check catches on its first run.
+Task 9 step 4 removes the `SCALE CHECK` row for editorial reasons, which takes the overflow to
+exactly 0px; this has been verified empirically against a scratch copy.
+
+Commit the check with this failure standing, exactly as Task 3 commits a failing filename
+check. **Do not edit either deck to make it pass** — that is Task 9's job.
+
+If the output differs from the above in any way — a different slide, a different viewport, more
+than one finding — stop and report, because then the baseline really has moved.
 
 - [ ] **Step 4: Commit**
 
@@ -401,7 +417,7 @@ Both defects live in the kickoff deck and are one-line edits with no layout cons
 **Files:**
 - Modify: `slide_deck/kickoff_overview_2026June12.html`
 
-- [ ] **Step 1: Repair the broken anchor**
+- [ ] **Step 1: Delete the malformed cross-tool resources row**
 
 Find (note the doubled quote after `href=` and the missing closing quote):
 
@@ -409,11 +425,12 @@ Find (note the doubled quote after `href=` and the missing closing quote):
 	<div class="row"><b>codex</b><span><a href=""https://developers.openai.com/codex>developers.openai.com/codex</a> — /skills · /mcp · /agents</span></div>
 ```
 
-Replace with:
-
-```html
-	<div class="row"><b>codex</b><span><a href="https://developers.openai.com/codex">developers.openai.com/codex</a> — the companion deck covers this in Codex terms</span></div>
-```
+**Delete this line entirely.** Repairing the anchor was the original instruction; deleting the
+row is better. A Codex resources row inside a Claude Code deck is exactly the cross-tool
+contamination this revision exists to remove, a dedicated Codex deck now covers those links,
+and the malformed anchor disappears with the row it belongs to. The spec allows the kickoff
+deck exactly one deliberate Codex mention, and that allowance is spent on slide 7's bridge
+note, added in Task 10.
 
 - [ ] **Step 2: Fix the precedence claim**
 
@@ -449,7 +466,7 @@ Run:
 grep -o 'href="[^"]*"' slide_deck/kickoff_overview_2026June12.html
 ```
 
-Expected: one clean `href="https://..."` per line, no doubled quotes, no unterminated values. Count should be 6.
+Expected: one clean `href="https://..."` per line, no doubled quotes, no unterminated values. Count should be 5 — the sixth was the malformed row deleted in step 1.
 
 - [ ] **Step 5: Verify all links still resolve**
 
@@ -488,7 +505,9 @@ import { DECK_DIR } from './decks.mjs';
 
 // The Codex deck must carry no Claude terminology at all.
 // The kickoff deck is allowed exactly one deliberate Codex mention: the
-// cross-tool bridge on the instruction-file slide. More than one is leakage.
+// cross-tool bridge note on the instruction-file slide, which names AGENTS.md
+// twice (once plain, once as @AGENTS.md). The ceiling of 3 leaves one hit of
+// headroom for rewording while still catching a whole reintroduced section.
 const RULES = [
   {
     file: 'AIagentic_workflow_orientation_tutorial_ICISE_2026August10.html',
@@ -500,7 +519,7 @@ const RULES = [
     file: 'kickoff_overview_2026June12.html',
     label: 'kickoff (Claude Code)',
     pattern: /\bcodex\b|AGENTS\.md|\.codex/gi,
-    maxHits: 4,
+    maxHits: 3,
   },
 ];
 
@@ -528,7 +547,9 @@ Run:
 cd slide_deck/checks && node terminology.mjs
 ```
 
-Expected: `PASS` for the ICISE deck (0 hits). The kickoff deck should now be at or under 4 hits following Task 5 step 3. If it exceeds 4, list the hits and remove the surplus cross-tool copy before continuing — the allowance is for the single bridge mention only.
+Expected: both decks `PASS`. The ICISE deck should report 0 hits. The kickoff deck should report 1 — the lone `AGENTS.md` label inside the "everything hangs off the loop" SVG, which Task 10 removes along with that slide. Task 5 deleted the other cross-tool copy.
+
+If the kickoff deck exceeds 3, list the hits before continuing rather than raising the ceiling: the ceiling is the spec's requirement, not a tuning knob.
 
 - [ ] **Step 3: Commit**
 
@@ -836,8 +857,12 @@ Then replace that slide's `speaker-notes` aside with:
   <aside class="speaker-notes"><p>Sources</p><p>codebase-onboarding_demo/steady-2d-heat-inverse/README.md; source modules; tests/test_grad_*.py</p><p>Scale check: the same evidence-first map applies to the larger jaxPTPolyPol research stack.</p></aside>
 ```
 
-Removing this row also closes the empty bottom-left quadrant noted in the spec, because the
-remaining three rows balance the science-loop column.
+Removing this row does double duty. Editorially it drops an aside that is not a concept. Structurally it is
+the fix for the one baseline overflow failure: slide 11 overflows by 28px at 1280×620, and
+deleting this row takes it to exactly 0px (verified). It also closes the empty bottom-left
+quadrant noted in the spec, because the remaining three rows balance the science-loop column.
+
+After this step, `overflow.mjs` must go fully green — that is the check this task turns.
 
 - [ ] **Step 5: Move the remaining micro-copy into notes**
 

@@ -147,9 +147,18 @@ slide carries the concept, the panel carries the background.
 
 ## Verification
 
-"All texts visible" is the binding constraint. It is currently satisfied — a probe across all 29
-slides at 1440×810, 1280×720, 1024×768, and 1280×620 found zero clipped elements — so the
-revision must not regress it. Four checks, all scripted, all committed under `slide_deck/checks/`:
+"All texts visible" is the binding constraint, and it is **not** currently satisfied. A probe
+across all 29 slides at 1440×810, 1280×720, 1024×768, and 1280×620 finds exactly one defect:
+ICISE slide 11 (demo-01 debrief) overflows its box by 28px at 1280×620. Every other
+deck/viewport combination is clean.
+
+The overflow originates in the four-row `.evidence-list`; removing the `SCALE CHECK` row —
+which this spec already cuts as aside-grade micro-copy — takes the overflow to exactly 0px,
+verified empirically. So one edit satisfies both the editorial and the layout requirement.
+
+An earlier draft of this spec claimed the baseline was clean. That claim came from probing
+each deck at a subset of viewports and generalising to the full cross product; the ICISE deck
+was never probed at 1280×620. The check harness caught it on its first run. Four checks, all scripted, all committed under `slide_deck/checks/`:
 
 1. **Overflow probe** — for each slide at each of the four viewports, assert no element's
    bounding box escapes the viewport and no slide scrolls. Must also pass with the notes panel
