@@ -1144,6 +1144,42 @@ grep -c 'class="[^"]*bridge' slide_deck/AIagentic_workflow_orientation_tutorial_
 
 A count of `0` means the rule is safe to delete. Do not delete a rule that still has a user.
 
+- [ ] **Step 10c: Fix the notes-panel border contrast before the deck is cloned**
+
+The panel's background barely differs from the page — WCAG contrast 1.08 on this deck and 1.20 on
+the ivory deck Task 10 creates. So the **border is what defines the panel**, which makes it a
+functional UI boundary rather than decoration, and WCAG's 3:1 minimum applies to it.
+
+`var(--green)` fails that on the ivory palette:
+
+| Border token | dark deck | ivory deck (Task 10) |
+| --- | ---: | ---: |
+| `var(--green)` (current) | 5.61 | **2.75 — fails** |
+| `var(--green-soft)` | 10.47 | 4.82 |
+
+Switching to `--green-soft` fixes the ivory deck and improves this one. Do it here, before Task 10
+clones the stylesheet, so one edit serves both files and the two decks keep byte-identical CSS
+apart from their token values.
+
+In the `#notes-panel` rule, replace all three border declarations:
+
+```css
+    border-top: 1px solid var(--green);
+    border-left: 1px solid var(--green);
+    border-bottom: 1px solid var(--green);
+```
+
+with:
+
+```css
+    border-top: 1px solid var(--green-soft);
+    border-left: 1px solid var(--green-soft);
+    border-bottom: 1px solid var(--green-soft);
+```
+
+Leave the `#notes-panel h4` colour as `var(--green)` — it is text on the panel surface, not the
+boundary, and it already passes.
+
 - [ ] **Step 11: Verify the count**
 
 Run:
