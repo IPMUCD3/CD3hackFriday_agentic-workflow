@@ -1327,6 +1327,32 @@ grep -c 'MORE SPECIFIC WINS' slide_deck/kickoff_overview_2026June12.html
 
 Expected: `0`.
 
+- [ ] **Step 3c: Restore the hooks claim that is true for Claude Code**
+
+Slide 8's notes were corrected in Task 9 to remove a claim that hooks are a hard enforcement
+boundary. That correction is right **for Codex**, whose documentation says hooks are "a useful
+guardrail, not a complete enforcement boundary."
+
+For Claude Code the original claim is true, and the docs are explicit: a `PreToolUse` hook exiting
+with code 2 stops a tool call before permission rules are evaluated, and hook decisions cannot be
+overridden by an allow rule. So this deck should say it.
+
+This is a legitimate divergence: the spec permits the decks' **text** to differ where tool
+behaviour genuinely differs, and `parity.mjs` compares structure rather than words. Do not
+propagate the Codex wording here.
+
+In this deck's slide 8 `<aside class="speaker-notes">`, the sentence that reads (after the clone):
+
+```
+What actually constrains it is the sandbox and the approval policy — <code>sandbox_mode</code> and <code>approval_policy</code> decide what it may touch and when it must stop and ask.
+```
+
+should become:
+
+```
+For a hard guarantee, use a hook or a deny rule — a PreToolUse hook exiting with code 2 stops the call before permission rules are even evaluated.
+```
+
 - [ ] **Step 4: Add the one permitted cross-tool mention**
 
 On slide 7, inside the `speaker-notes` aside only:
