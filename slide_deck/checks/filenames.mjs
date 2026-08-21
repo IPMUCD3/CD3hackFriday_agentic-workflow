@@ -3,21 +3,27 @@ import { join } from 'node:path';
 import { DECKS, DECK_DIR } from './decks.mjs';
 
 const REPO = join(DECK_DIR, '..');
-const DEMO_DIRS = ['codebase-onboarding_demo', 'paper-to-mathematica-nb_demo'];
 
-// The spec scopes this check to demo slides: "every filename printed on a demo
-// slide must exist in the corresponding demo directory". A filename anywhere
-// else is not a claim about a local artifact -- a mock terminal transcript uses
-// generic names on purpose, and a .pdf inside an external href is a URL path
-// segment that no local file could ever satisfy. Scanning the whole document
-// flags both and can never go green.
-const demoSlideText = (html) =>
+// The spec says a filename on a demo slide must exist in the CORRESPONDING demo
+// directory. A flat union across both would let a Demo-01 artifact name pass
+// while sitting on a Demo-02 slide.
+const DEMO_DIRS = {
+  'Live demo 01': 'codebase-onboarding_demo',
+  'Live demo 02': 'paper-to-mathematica-nb_demo',
+};
+
+// Split into sections, keep only demo slides, tag each with its demo. href
+// attributes are stripped: a filename inside a URL is a path segment, not a
+// claim that a local artifact exists.
+const demoSections = (html) =>
   html
     .split(/<section\b/)
     .slice(1)
-    .filter((s) => /class="[^"]*demo-slide/.test(s) || /data-section="Live demo/.test(s))
-    .join('\n')
-    .replace(/href="[^"]*"/g, '');
+    .map((s) => {
+      const m = s.match(/data-section="(Live demo \d+)"/);
+      return m ? { label: m[1], text: s.replace(/href="[^"]*"/g, '') } : null;
+    })
+    .filter(Boolean);
 
 // Only artifact extensions. Config filenames (CLAUDE.md, AGENTS.md, SKILL.md,
 // settings.json, config.toml) name conventions, not files that must exist here.
@@ -38,9 +44,9 @@ function walk(dir, out = new Set()) {
 // The demo repositories are nested, untracked git repos. On a fresh clone they
 // are absent, and a missing file then means "not checked out", not "wrong name".
 // Fail only when every demo directory is present; otherwise warn and pass.
-const absentDirs = DEMO_DIRS.filter((d) => !existsSync(join(REPO, d)));
-const onDisk = new Set();
-for (const d of DEMO_DIRS) for (const f of walk(join(REPO, d))) onDisk.add(f);
+const absentDirs = Object.values(DEMO_DIRS).filter((d) => !existsSync(join(REPO, d)));
+const onDisk = {};
+for (const [label, dir] of Object.entries(DEMO_DIRS)) onDisk[label] = walk(join(REPO, dir));
 
 if (absentDirs.length) {
   console.warn(`SKIP demo directories not checked out: ${absentDirs.join(', ')}`);
@@ -50,15 +56,34 @@ if (absentDirs.length) {
 let failures = 0;
 for (const deck of DECKS) {
   const html = readFileSync(join(DECK_DIR, deck.file), 'utf8');
-  const named = new Set((demoSlideText(html).match(ARTIFACT) || []).filter((f) => !IGNORE.has(f)));
-  const missing = [...named].filter((f) => !onDisk.has(f));
+
+  // One artifact-name set per demo label -- never a cross-demo union.
+  const namedByLabel = new Map();
+  for (const { label, text } of demoSections(html)) {
+    if (!DEMO_DIRS[label]) continue;
+    const names = namedByLabel.get(label) || new Set();
+    for (const f of text.match(ARTIFACT) || []) {
+      if (!IGNORE.has(f)) names.add(f);
+    }
+    namedByLabel.set(label, names);
+  }
+
+  let namedCount = 0;
+  const missing = [];
+  for (const [label, names] of namedByLabel) {
+    namedCount += names.size;
+    for (const f of names) {
+      if (!onDisk[label].has(f)) missing.push(`${f} (expected in ${DEMO_DIRS[label]})`);
+    }
+  }
+
   if (missing.length && absentDirs.length) {
     console.warn(`WARN ${deck.name}: unverifiable -> ${missing.join(', ')}`);
   } else if (missing.length) {
     failures += missing.length;
     console.error(`FAIL ${deck.name}: named on a slide but not on disk -> ${missing.join(', ')}`);
   } else {
-    console.log(`PASS ${deck.name}: all ${named.size} named artifact(s) exist`);
+    console.log(`PASS ${deck.name}: all ${namedCount} named artifact(s) exist`);
   }
 }
 
