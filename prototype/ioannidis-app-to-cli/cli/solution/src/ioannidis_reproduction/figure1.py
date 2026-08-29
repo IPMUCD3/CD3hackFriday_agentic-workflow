@@ -1,10 +1,17 @@
 """Numerical curves and rendering for Ioannidis (2005), Figure 1."""
 
 from collections.abc import Iterable
+import os
 from pathlib import Path
+import tempfile
+
+import numpy as np
+
+_MATPLOTLIB_CACHE = Path(tempfile.gettempdir()) / "ioannidis-matplotlib-cache"
+_MATPLOTLIB_CACHE.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("MPLCONFIGDIR", str(_MATPLOTLIB_CACHE))
 
 import matplotlib
-import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
