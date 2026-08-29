@@ -1,0 +1,10 @@
+power,odds,bias,published_ppv,digits,label
+0.80,1,0.10,0.85,2,Adequately powered RCT with little bias
+0.95,2,0.30,0.85,2,Confirmatory meta-analysis of good-quality RCTs
+0.80,0.3333333333333333,0.40,0.41,2,Meta-analysis of small inconclusive studies
+0.20,0.2,0.20,0.23,2,Underpowered but well-performed phase I/II RCT
+0.20,0.2,0.80,0.17,2,Underpowered poorly performed phase I/II RCT
+0.80,0.1,0.30,0.20,2,Adequately powered exploratory epidemiological study
+0.20,0.1,0.30,0.12,2,Underpowered exploratory epidemiological study
+0.20,0.001,0.80,0.0010,4,Discovery-oriented exploratory research with massive testing
+0.20,0.001,0.20,0.0015,4,Massive testing with more limited bias
