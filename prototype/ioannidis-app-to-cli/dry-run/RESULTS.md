@@ -1,6 +1,7 @@
 # Cold dry-run results
 
-Date: 2026-08-29  
+Date: 2026-08-29
+
 Environment: macOS, Python 3.14.3, uv 0.12.7, Codex CLI 0.150.1
 
 ## Computational checks
