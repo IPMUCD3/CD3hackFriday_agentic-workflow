@@ -27,3 +27,29 @@ def ppv_with_bias(
     if denominator == 0.0:
         raise ValueError("PPV denominator is zero")
     return numerator / denominator
+
+
+def corrected_false_positive_cell(
+    c: float, odds: float, bias: float, alpha: float = 0.05
+) -> float:
+    """Return the corrected Table 2 cell for a false-positive finding."""
+    return (c * alpha + bias * c * (1.0 - alpha)) / (odds + 1.0)
+
+
+def printed_false_positive_cell(
+    c: float, odds: float, bias: float, alpha: float = 0.05
+) -> float:
+    """Parse the original Table 2 typesetting using normal precedence."""
+    return c * alpha + bias * c * (1.0 - alpha) / (odds + 1.0)
+
+
+def negative_finding_no_relationship_cell(
+    c: float, odds: float, bias: float, alpha: float = 0.05
+) -> float:
+    """Return the Table 2 cell for an unreported no-relationship result."""
+    return (1.0 - bias) * c * (1.0 - alpha) / (odds + 1.0)
+
+
+def no_relationship_column_total(c: float, odds: float) -> float:
+    """Return the Table 2 total for the no-relationship column."""
+    return c / (odds + 1.0)

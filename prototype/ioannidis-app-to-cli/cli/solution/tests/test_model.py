@@ -1,9 +1,16 @@
 import csv
+from math import isclose
 from pathlib import Path
 
 import pytest
 
-from ioannidis_reproduction.model import ppv_with_bias
+from ioannidis_reproduction.model import (
+    corrected_false_positive_cell,
+    negative_finding_no_relationship_cell,
+    no_relationship_column_total,
+    ppv_with_bias,
+    printed_false_positive_cell,
+)
 
 
 REFERENCE = Path(__file__).parents[1] / "reference" / "published_table4.csv"
@@ -35,3 +42,17 @@ def test_invalid_probabilities_and_odds_are_rejected(
 ) -> None:
     with pytest.raises(ValueError, match=name):
         ppv_with_bias(**kwargs)
+
+
+def test_corrected_table2_cells_sum_to_the_no_relationship_column_total() -> None:
+    corrected_sum = corrected_false_positive_cell(1000, 0.1, 0.3) + (
+        negative_finding_no_relationship_cell(1000, 0.1, 0.3)
+    )
+    assert isclose(corrected_sum, no_relationship_column_total(1000, 0.1))
+
+
+def test_printed_table2_expression_breaks_the_column_total_identity() -> None:
+    printed_sum = printed_false_positive_cell(1000, 0.1, 0.3) + (
+        negative_finding_no_relationship_cell(1000, 0.1, 0.3)
+    )
+    assert not isclose(printed_sum, no_relationship_column_total(1000, 0.1))
