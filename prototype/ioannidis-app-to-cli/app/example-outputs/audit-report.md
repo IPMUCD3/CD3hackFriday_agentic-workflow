@@ -13,19 +13,38 @@ The original typesetting can be read as
 
 `c alpha + u c (1-alpha) / (R+1)`.
 
-No retraction was identified on the PLOS publication record checked for this
-prototype.
+No retraction was listed on the [PLOS publication record](https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020124)
+when checked on 2026-08-30.
 
 ## Claim audit
 
-| Companion claim | Verdict | Evidence and qualification |
+| ID | Verdict | Evidence and qualification |
 |---|---|---|
-| PPV depends on pre-study odds, power, alpha, and—in the extension—bias. | **SUPPORTED** | Defined in the original PDF on pp. 1-2, Tables 1-2 and the adjacent equations. |
-| Figure 1 shows lower PPV as bias increases at fixed power and odds. | **SUPPORTED** | The four curves in each panel are ordered by `u`; the stated exception at very low power is discussed on p. 2. |
-| Table 4 contains nine model-derived PPVs at `alpha=0.05`. | **SUPPORTED** | PDF p. 5, Table 4 and its footnote. |
-| The title is an empirical measurement of all published literature. | **UNSUPPORTED** | The article is an essay using an analytic model and illustrative inputs; it does not sample all published findings. |
-| Increasing bias always decreases PPV under every parameter choice. | **QUALIFIED** | The paper explicitly gives an exception when `1-beta <= alpha` (PDF p. 2, “Bias”). |
-| Reproducing the equations validates the assumptions and conclusion. | **UNSUPPORTED** | Numerical reproduction tests internal calculation consistency, not whether `R`, `u`, or the binary truth model describe a field. |
+| [C01] | **SUPPORTED** | PDF pp. 1-2 defines PPV from `R`, power, and `alpha`, then adds `u` in “Bias.” |
+| [C02] | **SUPPORTED** | The base inequality on p. 1 and bias discussion on p. 2 show how these inputs can reduce PPV. |
+| [C03] | **QUALIFIED** | This is a defensible interpretation, not a quoted result; the paper is an analytic essay with illustrative inputs. |
+| [C04] | **SUPPORTED** | The base framework and Table 1 appear on PDF pp. 1-2. |
+| [C05] | **SUPPORTED** | “Bias,” its PPV equation, and Table 2 appear on PDF p. 2. |
+| [C06] | **SUPPORTED** | Figure 1 on PDF p. 3 has three power panels and four `u` curves. |
+| [C07] | **SUPPORTED** | Corollaries 1-6 span PDF pp. 2-4; Table 4 is on p. 5. |
+| [C08] | **SUPPORTED** | “How Can We Improve the Situation?” spans PDF pp. 5-6. |
+| [C09] | **SUPPORTED** | PDF p. 1 defines `R` and the pre-study probability `R/(R+1)`. |
+| [C10] | **SUPPORTED** | PDF p. 1 defines power as `1-beta`. |
+| [C11] | **SUPPORTED** | PDF p. 1 defines `alpha` as the Type I error rate and discusses `0.05`. |
+| [C12] | **SUPPORTED** | PDF p. 1 defines PPV as the post-study probability that a positive finding is true. |
+| [C13] | **SUPPORTED** | PDF p. 2 defines `u` as the fraction made positive through bias. |
+| [C14] | **SUPPORTED** | The displayed base PPV equation matches PDF p. 1. |
+| [C15] | **SUPPORTED** | The displayed bias PPV equation matches the prose equation on PDF p. 2; the 2022 correction affects a Table 2 cell, not this equation. |
+| [C16] | **SUPPORTED** | PDF p. 1 uses binary true/no relationships and a common-power simplification for circumscribed fields. |
+| [C17] | **SUPPORTED** | PDF p. 2 explicitly assumes `u` does not depend on whether a true relationship exists. |
+| [C18] | **QUALIFIED** | The paper treats `R` and `u` as model inputs and uses illustrative settings; it does not estimate universal values. |
+| [C19] | **SUPPORTED** | Corollaries 1-6 on PDF pp. 2-4 make these conditional model claims. |
+| [C20] | **SUPPORTED** | In Figure 1, all plotted powers exceed `alpha=0.05`, so PPV decreases as `u` rises; p. 2 notes the exception outside that plotted regime. |
+| [C21] | **SUPPORTED** | PDF p. 5, Table 4 and its footnote give nine PPVs using `alpha=0.05`, from `0.85` to `0.0010`. |
+| [C22] | **SUPPORTED** | The calculations establish conditional sensitivity; they do not measure the real-world inputs, so the stated separation is warranted. |
+| [C23] | **SUPPORTED** | The 2022 correction changes the readable Table 2 identity, showing why checking the DOI record before implementation matters. |
+| [C24] | **SUPPORTED** | Figure 1 and all nine Table 4 entries are precise, independently transcribable reproduction targets. |
+| [C25] | **SUPPORTED** | Calculation agreement tests arithmetic consistency only, not whether the assumptions or headline apply to a field. |
 
 ## Effect of the correction
 

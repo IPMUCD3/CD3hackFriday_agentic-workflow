@@ -10,13 +10,14 @@ Environment: macOS, Python 3.14.3, uv 0.12.7, Codex CLI 0.150.1
 |---|---|---|
 | Source provenance | **PASS** | Both PLOS PDFs match pinned SHA-256 values. |
 | Independent oracle integrity | **PASS** | Nine literal Table 4 values and 36 checkpoints spanning all 12 Figure 1 curves are tested before implementation. |
-| Solution test suite | **PASS** | `18 passed in 0.84s`; measured wall time `1.02s`. |
-| Reproduction command | **PASS** | Exit code 0; final `OVERALL: MATCH`; measured wall time `0.35s`. |
+| Locked environment setup | **PASS** | `uv sync --locked` exited with code 0; measured wall time `0.01s`. |
+| Solution test suite | **PASS** | `23 passed in 0.71s`; measured wall time `0.87s`. |
+| Reproduction command | **PASS** | Exit code 0; final `OVERALL: MATCH`; measured wall time `0.34s`. |
 | Table 4 | **PASS** | All nine values match the precision displayed in the paper. |
 | Table 2 audit | **PASS** | Printed expression is intentionally `UNMATCHED`; corrected expression is `MATCH`. |
 | Figure 1 data | **PASS** | All 12 curves match three independent checkpoints at absolute tolerance `1e-12`. |
 | Figure 1 visual structure | **PASS** | Three power panels, four bias curves, axes, ordering, and legend match the scientific content of PDF page 3. |
-| Starter boundary | **PASS** | After dependency setup, starter collection stops at missing `ioannidis_reproduction.model`, not missing data or environment configuration. |
+| Starter boundary | **PASS** | After dependency setup, the 12 source/oracle/artifact checks pass; full collection stops at the intentionally absent implementation modules, not missing data or environment configuration. |
 
 ## Learning-experience gates
 

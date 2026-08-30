@@ -15,32 +15,39 @@ headline claim.
 ### 1. App: useful result first (0-15 minutes)
 
 Upload only `sources/ioannidis-2005.pdf`. Run
-`app/prompts/01-paper-companion.md`. Export the answer as
-`paper-companion.md`.
+`app/prompts/01-paper-companion.md`. Export the new answer as
+`paper-companion.md`; do not substitute the curated example.
 
 ### 2. App: independent audit (15-23 minutes)
 
-Open a fresh task. Supply the paper, companion, and DOI. Run
-`app/prompts/02-independent-audit.md`. The audit should discover the 2022
-correction without being given the correction PDF.
+Open a fresh task. Upload the paper and the `paper-companion.md` you just
+created, then run `app/prompts/02-independent-audit.md`. The audit should
+discover the 2022 correction without being given the correction PDF. Export
+the new answer as `audit-report.md`.
 
 ### 3. App: portable handoff (23-30 minutes)
 
-Run `app/prompts/03-replication-brief.md`. Export `replication-brief.md` into
-the CLI starter directory.
+Open a fresh task with the original paper, your new `audit-report.md`, and the
+two supplied oracle files `cli/starter/reference/published_table4.csv` and
+`cli/starter/reference/figure1_checkpoints.json`. Run
+`app/prompts/03-replication-brief.md`. Export the new answer as
+`cli/starter/replication-brief.md`.
 
 ### 4. CLI: implement the contract (30-50 minutes)
 
 Open `cli/starter/` in Codex CLI and ask:
 
 ```text
-Read ../../app/example-outputs/replication-brief.md. Implement the audited
-reproduction without changing reference/ or tests/. Run every check and explain
-the intentional Table 2 UNMATCHED result.
+Read replication-brief.md. Implement the audited reproduction without changing
+reference/ or tests/. Run every check and explain the intentional Table 2
+UNMATCHED result.
 ```
 
 The starter contains the independently transcribed reference values and
 black-box tests, but no scientific implementation.
+
+Files under `app/example-outputs/` are instructor previews only. The workshop
+chain always passes the participant's newly exported artifact to the next stage.
 
 ### 5. Debrief (50-60 minutes)
 

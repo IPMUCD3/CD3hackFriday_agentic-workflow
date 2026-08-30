@@ -58,9 +58,17 @@ The implementation must read these values rather than generate its own oracle.
 | 0.20 | 1/1000 | 0.80 | 0.0010 |
 | 0.20 | 1/1000 | 0.20 | 0.0015 |
 
-Figure checkpoints are stored independently for every combination of powers
-`(0.8, 0.5, 0.2)` and biases `(0.05, 0.2, 0.5, 0.8)` at
-`R=(0.1, 0.5, 1.0)`.
+The supplied immutable oracle files are relative to `cli/starter/`:
+
+- `reference/published_table4.csv` contains the nine rows above; SHA-256
+  `a55c621c928f043bb4f7f7fbe36c0d81de3ff9fe980ca795e4e3fba9073e35f4`.
+- `reference/figure1_checkpoints.json` contains 36 checkpoints: every
+  combination of powers `(0.8, 0.5, 0.2)` and biases
+  `(0.05, 0.2, 0.5, 0.8)` at `R=(0.1, 0.5, 1.0)`; SHA-256
+  `8eaa83bdd8cad9b8ece9e10e005b9cccdd28c9fb5a89a37ee4f2e1f8b5c20cf4`.
+
+Treat these files as read-only. The implementation must consume them and must
+not derive, overwrite, or replace its own oracle.
 
 ## Figure 1 target
 
